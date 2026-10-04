@@ -26,16 +26,27 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:50;background:rgba(255,255,25
 .timeline{border-right:2px solid #e5e7eb;margin-right:8px;padding-right:14px}.event{position:relative;padding:0 0 16px}.event:before{content:'';position:absolute;right:-20px;top:4px;width:10px;height:10px;border-radius:50%;background:#475467;border:3px solid #fff}.event strong{font-size:13px}.event div{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.6}
 .attach{display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:13px;margin-top:8px}.attachInfo{flex:1;min-width:0}.attachInfo b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.attachInfo span{font-size:11px;color:var(--muted)}.mini{border:0;border-radius:9px;padding:7px 9px;font-size:11px;font-weight:700}.storageBar{height:9px;background:#eaecf0;border-radius:99px;overflow:hidden;margin-top:8px}.storageBar i{display:block;height:100%;background:#475467;width:0}.toast{position:fixed;left:50%;bottom:105px;transform:translateX(-50%);z-index:200;background:#111827;color:#fff;padding:10px 14px;border-radius:12px;font-size:13px;display:none;max-width:90%;text-align:center}
 .hidden{display:none!important}.small{font-size:12px;color:var(--muted);line-height:1.7}.sectionTitle{font-weight:800;margin-bottom:8px}.pillrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.warning{background:#fffaeb;border:1px solid #fedf89;color:#93370d;padding:11px 12px;border-radius:13px;font-size:12px;line-height:1.7}
+
+.ocrbox{display:none;background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+.ocrbar{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-top:10px}
+.ocrbar i{display:block;height:100%;width:0;background:#111827;transition:width .2s}
+
 </style>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
 <div class="app">
 <section id="home" class="screen active">
   <h1>معاملاتي</h1>
-  <div class="sub">نسخة Local v12 — البيانات والمستندات وسجل الإجراءات داخل هذا الجهاز</div>
+  <div class="sub">نسخة Local v13 — قراءة المستند وإدراج بياناته مع بقاء المعاملات والمرفقات على الجهاز</div>
   <div class="privacy">🔒 لا يتم رفع بيانات المعاملات أو المرفقات إلى GitHub أو قاعدة بيانات خارجية.</div>
-  <button class="btn full scan" onclick="scanInput.click()">📷 مسح / تصوير مستند وحفظه محليًا</button>
+  <button class="btn full scan" onclick="scanInput.click()">📷 مسح مستند وقراءة بياناته تلقائيًا</button>
   <input id="scanInput" class="hidden" type="file" accept="image/*,application/pdf" capture="environment" onchange="quickScan(event)">
+  <div id="ocrBox" class="ocrbox">
+    <strong id="ocrTitle">جارٍ قراءة المستند…</strong>
+    <div class="ocrbar"><i id="ocrFill"></i></div>
+    <div id="ocrMsg" class="small" style="margin-top:8px">يتم تحليل النص داخل المتصفح.</div>
+  </div>
   <div class="grid">
     <div class="stat">إجمالي المعاملات<b id="countAll">0</b></div>
     <div class="stat">تحت الإجراء<b id="countOpen">0</b></div>
@@ -74,7 +85,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:50;background:rgba(255,255,25
   <div class="card"><div class="sectionTitle">الخصوصية والتخزين</div><div class="small">كل بيانات المعاملات والمرفقات في IndexedDB على هذا الجهاز. GitHub يستضيف ملفات التطبيق فقط.</div><div id="storageText" class="small" style="margin-top:8px">جارٍ حساب مساحة التخزين…</div><div class="storageBar"><i id="storageFill"></i></div><button class="btn secondary full" style="margin-top:10px" onclick="requestPersistence()">طلب حماية التخزين المحلي</button></div>
   <div class="card"><div class="sectionTitle">النسخة الاحتياطية</div><div class="warning">مهم: التخزين المحلي قد يتأثر إذا حُذفت بيانات Safari أو حُذف التطبيق. صدّر نسخة احتياطية بشكل دوري واحفظها في «على الـ iPhone» أو موقع معتمد لديك.</div><div class="actions"><button class="btn success" onclick="exportBackup()">تصدير نسخة</button><button class="btn blue" onclick="backupInput.click()">استعادة نسخة</button></div><input class="hidden" id="backupInput" type="file" accept="application/json,.json" onchange="importBackup(event)"></div>
   <div class="card"><div class="sectionTitle">ترحيل النسخة القديمة</div><div id="migrationText" class="small">يتم التحقق من بيانات النسخة السابقة تلقائيًا.</div><button class="btn secondary full" style="margin-top:8px" onclick="migrateLegacy(true)">إعادة فحص البيانات القديمة</button></div>
-  <div class="card"><div class="sectionTitle">إصدار التطبيق</div><div class="small">معاملاتي Local v12 • IndexedDB • مرفقات • تحويل • سجل إجراءات • نسخ احتياطي</div></div>
+  <div class="card"><div class="sectionTitle">إصدار التطبيق</div><div class="small">معاملاتي Local v13 • IndexedDB • OCR • مرفقات • تحويل • سجل إجراءات • نسخ احتياطي</div></div>
 </section>
 </div>
 
@@ -124,7 +135,139 @@ async function startEdit(id){const x=await getOne(STORES.tx,id);if(!x)return;edi
 function cancelForm(){startNew();go('home')}
 async function saveForm(){if(!fNumber.value.trim()||!fSubject.value.trim()){alert('رقم المعاملة والموضوع مطلوبان');return}const old=editingId?await getOne(STORES.tx,editingId):null;const x={...(old||{}),id:editingId||uid(),number:fNumber.value.trim(),type:fType.value,entity:fEntity.value.trim(),subject:fSubject.value.trim(),owner:fOwner.value.trim(),dueDate:fDue.value,status:fStatus.value,notes:fNotes.value.trim(),createdAt:old?.createdAt||nowISO(),updatedAt:nowISO(),ocrText:old?.ocrText||'',currentDepartment:old?.currentDepartment||'',currentAssignee:old?.currentAssignee||''};await putOne(STORES.tx,x);await logAction(x.id,editingId?'edit':'create',editingId?'تم تعديل بيانات المعاملة':'تم إنشاء المعاملة');editingId=null;clearForm();go('home');showToast('✅ تم الحفظ محليًا')}
 
-async function quickScan(ev){const file=ev.target.files?.[0];ev.target.value='';if(!file)return;const id=uid();const stamp=new Date();const pad=n=>String(n).padStart(2,'0');const num=`SCAN-${stamp.getFullYear()}${pad(stamp.getMonth()+1)}${pad(stamp.getDate())}-${pad(stamp.getHours())}${pad(stamp.getMinutes())}`;const tx={id,number:num,type:'وارد',entity:'مستند محلي',subject:file.type==='application/pdf'?'مستند PDF محفوظ محليًا':'مستند مصور محفوظ محليًا',owner:'',dueDate:'',status:'جديدة',notes:'',ocrText:'',createdAt:nowISO(),updatedAt:nowISO(),currentDepartment:'',currentAssignee:''};await putOne(STORES.tx,tx);await saveAttachment(id,file);await logAction(id,'create','تم إنشاء معاملة من مستند ممسوح/مصور');await logAction(id,'attachment',`تم حفظ المرفق محليًا: ${file.name||'مستند'}`);showToast('✅ تم حفظ المستند داخل الجهاز');await renderHome();openDetail(id)}
+
+function arDigitsToEn(s){
+  const m={'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9'};
+  return String(s||'').replace(/[٠-٩]/g,d=>m[d]);
+}
+function cleanOCRLine(s){return String(s||'').replace(/\s+/g,' ').trim()}
+function extractOCRFields(text){
+  const raw=String(text||'').replace(/\r/g,'');
+  const lines=raw.split('\n').map(cleanOCRLine).filter(Boolean);
+  const norm=arDigitsToEn(raw);
+
+  let number='';
+  let m=norm.match(/(?:رقم\s*(?:المعاملة|الخطاب|الصادر|الوارد)?|المرجع)\s*[:\-]?\s*([A-Za-z0-9\/\-]{2,})/i);
+  if(m) number=m[1];
+  if(!number){
+    m=norm.match(/\b([0-9]{3,}(?:[\/\-][0-9A-Za-z]{1,10})*)\b/);
+    if(m) number=m[1];
+  }
+
+  let date='';
+  m=norm.match(/(?:التاريخ|تاريخ)\s*[:\-]?\s*([0-9]{1,4}[\/\-][0-9]{1,2}[\/\-][0-9]{1,4})/i);
+  if(m) date=m[1];
+
+  let subject='';
+  for(let i=0;i<lines.length;i++){
+    if(/الموضوع|موضوع/i.test(lines[i])){
+      subject=cleanOCRLine(lines[i].replace(/.*?(الموضوع|موضوع)\s*[:\-]?/i,''));
+      if(!subject && lines[i+1]) subject=lines[i+1];
+      break;
+    }
+  }
+  if(!subject){
+    subject=lines.find(x=>x.length>=10 && x.length<=180 &&
+      !/بسم الله|السلام عليكم|التاريخ|رقم|المملكة العربية السعودية|وزارة/i.test(x)) || 'مستند ممسوح';
+  }
+
+  let entity='';
+  for(let i=0;i<lines.length;i++){
+    if(/(?:الجهة|من)\s*[:\-]/i.test(lines[i])){
+      entity=cleanOCRLine(lines[i].replace(/.*?(الجهة|من)\s*[:\-]?/i,''));
+      if(entity) break;
+    }
+  }
+  if(!entity){
+    entity=lines.find(x=>/وزارة|إدارة|قسم|مستشفى|مدينة|مركز|شركة|مؤسسة|جامعة|كلية/i.test(x)) || 'مستند محلي';
+  }
+
+  return {
+    number:(number||'').slice(0,80),
+    date:(date||'').slice(0,30),
+    subject:(subject||'مستند ممسوح').slice(0,200),
+    entity:(entity||'مستند محلي').slice(0,150)
+  };
+}
+function setOCRProgress(p,msg){
+  ocrBox.style.display='block';
+  ocrFill.style.width=Math.max(2,Math.round((p||0)*100))+'%';
+  if(msg) ocrMsg.textContent=msg;
+}
+
+async function quickScan(ev){
+  const file=ev.target.files?.[0];
+  ev.target.value='';
+  if(!file)return;
+
+  const id=uid();
+  const stamp=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  const fallbackNum=`SCAN-${stamp.getFullYear()}${pad(stamp.getMonth()+1)}${pad(stamp.getDate())}-${pad(stamp.getHours())}${pad(stamp.getMinutes())}`;
+
+  let ocrText='', fields={number:'',date:'',subject:'',entity:''};
+
+  if(file.type && file.type.startsWith('image/')){
+    try{
+      ocrTitle.textContent='جارٍ قراءة المستند…';
+      setOCRProgress(.02,'تهيئة القراءة العربية والإنجليزية…');
+
+      if(typeof Tesseract==='undefined') throw new Error('OCR engine unavailable');
+
+      const result=await Tesseract.recognize(file,'ara+eng',{
+        logger:m=>{
+          if(m.status==='recognizing text'){
+            setOCRProgress(m.progress||0,'جارٍ قراءة النص من الصورة…');
+          }else{
+            setOCRProgress(Math.min(.2+(m.progress||0)*.4,.75),'تحميل وتجهيز محرك القراءة…');
+          }
+        }
+      });
+
+      ocrText=(result?.data?.text||'').trim();
+      fields=extractOCRFields(ocrText);
+      setOCRProgress(.94,'تمت القراءة، جارٍ إدراج البيانات والحفظ…');
+    }catch(err){
+      console.error(err);
+      ocrMsg.textContent='تعذرت القراءة الآلية؛ سيتم حفظ المستند ويمكن تعديل البيانات يدويًا.';
+    }
+  }
+
+  const tx={
+    id,
+    number:fields.number||fallbackNum,
+    type:'وارد',
+    entity:fields.entity||'مستند محلي',
+    subject:fields.subject||(file.type==='application/pdf'?'مستند PDF محفوظ محليًا':'مستند مصور محفوظ محليًا'),
+    owner:'',
+    dueDate:'',
+    status:'جديدة',
+    notes:fields.date?`تاريخ مقروء من المستند: ${fields.date}`:'',
+    ocrText,
+    createdAt:nowISO(),
+    updatedAt:nowISO(),
+    currentDepartment:'',
+    currentAssignee:''
+  };
+
+  await putOne(STORES.tx,tx);
+  await saveAttachment(id,file);
+  await logAction(id,'create',ocrText?'تم إنشاء المعاملة وقراءة المستند تلقائيًا':'تم إنشاء معاملة من مستند محلي');
+  await logAction(id,'attachment',`تم حفظ المرفق محليًا: ${file.name||'مستند'}`);
+
+  if(ocrText){
+    await logAction(id,'ocr','تم استخراج النص والبيانات تلقائيًا من المستند');
+    setOCRProgress(1,'تمت القراءة والحفظ بنجاح.');
+    setTimeout(()=>{ocrBox.style.display='none';ocrFill.style.width='0'},1600);
+    showToast('✅ تم قراءة المستند وإدراج البيانات');
+  }else{
+    ocrBox.style.display='none';
+    showToast('✅ تم حفظ المستند داخل الجهاز');
+  }
+
+  await renderHome();
+  openDetail(id);
+}
 async function saveAttachment(txid,file){const rec={id:uid(),transactionId:txid,name:file.name||`مستند-${Date.now()}`,type:file.type||'application/octet-stream',size:file.size||0,blob:file,createdAt:nowISO()};await putOne(STORES.att,rec);return rec}
 async function addAttachment(ev,txid){const file=ev.target.files?.[0];ev.target.value='';if(!file)return;await saveAttachment(txid,file);const tx=await getOne(STORES.tx,txid);if(tx){tx.updatedAt=nowISO();await putOne(STORES.tx,tx)}await logAction(txid,'attachment',`تمت إضافة مرفق محلي: ${file.name||'مستند'}`);showToast('تم حفظ المرفق محليًا');openDetail(txid)}
 
@@ -150,7 +293,7 @@ async function requestPersistence(){if(!navigator.storage?.persist){showToast('�
 
 function blobToDataURL(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob)})}
 function dataURLToBlob(dataURL){const [h,b64]=dataURL.split(',');const type=(h.match(/data:(.*?);base64/)||[])[1]||'application/octet-stream';const bin=atob(b64);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);return new Blob([u8],{type})}
-async function exportBackup(){try{showToast('جارٍ تجهيز النسخة الاحتياطية…');const tx=await getAll(STORES.tx),actions=await getAll(STORES.act),attachments=await getAll(STORES.att);const packed=[];for(const a of attachments)packed.push({...a,blobData:await blobToDataURL(a.blob),blob:undefined});const data={app:'Moamalati',version:12,exportedAt:nowISO(),transactions:tx,actions,attachments:packed};const blob=new Blob([JSON.stringify(data)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');const d=new Date().toISOString().slice(0,10);a.href=url;a.download=`معاملاتي-نسخة-احتياطية-${d}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);showToast('✅ تم إنشاء النسخة الاحتياطية')}catch(e){console.error(e);alert('تعذر إنشاء النسخة الاحتياطية') }}
+async function exportBackup(){try{showToast('جارٍ تجهيز النسخة الاحتياطية…');const tx=await getAll(STORES.tx),actions=await getAll(STORES.act),attachments=await getAll(STORES.att);const packed=[];for(const a of attachments)packed.push({...a,blobData:await blobToDataURL(a.blob),blob:undefined});const data={app:'Moamalati',version:13,exportedAt:nowISO(),transactions:tx,actions,attachments:packed};const blob=new Blob([JSON.stringify(data)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');const d=new Date().toISOString().slice(0,10);a.href=url;a.download=`معاملاتي-نسخة-احتياطية-${d}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);showToast('✅ تم إنشاء النسخة الاحتياطية')}catch(e){console.error(e);alert('تعذر إنشاء النسخة الاحتياطية') }}
 async function importBackup(ev){const file=ev.target.files?.[0];ev.target.value='';if(!file)return;if(!confirm('سيتم دمج النسخة الاحتياطية مع البيانات الحالية. متابعة؟'))return;try{const data=JSON.parse(await file.text());if(data.app!=='Moamalati'||!Array.isArray(data.transactions))throw new Error('invalid');for(const x of data.transactions)await putOne(STORES.tx,x);for(const x of (data.actions||[]))await putOne(STORES.act,x);for(const x of (data.attachments||[])){const rec={...x,blob:dataURLToBlob(x.blobData)};delete rec.blobData;await putOne(STORES.att,rec)}showToast('✅ تمت استعادة النسخة');renderHome();updateStorage()}catch(e){console.error(e);alert('الملف غير صالح أو تعذرت الاستعادة')}}
 
 async function migrateLegacy(force=false){const meta=await getOne(STORES.meta,'legacyMigrated');if(meta&&!force){migrationText.textContent='تم فحص/ترحيل البيانات القديمة مسبقًا.';return}const keys=['moamalati_ocr_v3','moamalati_v2','moamalati_pwa_v2','moamalati_pwa_v1','transactions_v1'];let total=0;for(const key of keys){let arr=[];try{arr=JSON.parse(localStorage.getItem(key)||'[]')}catch{}if(!Array.isArray(arr))continue;for(const old of arr){const id=String(old.id||uid());if(await getOne(STORES.tx,id))continue;const x={id,number:old.n||old.number||`OLD-${Date.now()}`,type:old.t||old.type||'وارد',entity:old.e||old.entity||'',subject:old.s||old.subject||'معاملة قديمة',owner:old.o||old.owner||'',dueDate:old.d||old.due||'',status:old.st||old.status||'جديدة',notes:old.no||old.notes||'',ocrText:old.ocr||old.ocrText||'',createdAt:old.createdAt||nowISO(),updatedAt:nowISO(),currentDepartment:'',currentAssignee:''};await putOne(STORES.tx,x);await logAction(id,'migration','تم ترحيل المعاملة من النسخة القديمة');total++}}
