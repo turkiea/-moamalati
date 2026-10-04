@@ -34,13 +34,13 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:50;background:rgba(255,255,25
 
 .ocrerror{display:none;margin-top:10px;padding:10px 12px;border-radius:12px;background:#fef3f2;color:#b42318;border:1px solid #fecdca;font-size:12px;line-height:1.7}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.0/dist/tesseract.min.js?v=14"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js?v=15"></script>
 </head>
 <body>
 <div class="app">
 <section id="home" class="screen active">
   <h1>معاملاتي</h1>
-  <div class="sub">نسخة Local v14 — قراءة عربية محسّنة وإدراج بيانات الخطاب تلقائيًا</div>
+  <div class="sub">نسخة Local v15 — إصلاح OCR وإمكانية إعادة قراءة المستند من داخل المعاملة</div>
   <div class="privacy">🔒 لا يتم رفع بيانات المعاملات أو المرفقات إلى GitHub أو قاعدة بيانات خارجية.</div>
   <button class="btn full scan" onclick="scanInput.click()">📷 مسح مستند وقراءة بياناته تلقائيًا</button>
   <input id="scanInput" class="hidden" type="file" accept="image/*,application/pdf" capture="environment" onchange="quickScan(event)">
@@ -87,7 +87,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:50;background:rgba(255,255,25
   <div class="card"><div class="sectionTitle">الخصوصية والتخزين</div><div class="small">كل بيانات المعاملات والمرفقات في IndexedDB على هذا الجهاز. GitHub يستضيف ملفات التطبيق فقط.</div><div id="storageText" class="small" style="margin-top:8px">جارٍ حساب مساحة التخزين…</div><div class="storageBar"><i id="storageFill"></i></div><button class="btn secondary full" style="margin-top:10px" onclick="requestPersistence()">طلب حماية التخزين المحلي</button></div>
   <div class="card"><div class="sectionTitle">النسخة الاحتياطية</div><div class="warning">مهم: التخزين المحلي قد يتأثر إذا حُذفت بيانات Safari أو حُذف التطبيق. صدّر نسخة احتياطية بشكل دوري واحفظها في «على الـ iPhone» أو موقع معتمد لديك.</div><div class="actions"><button class="btn success" onclick="exportBackup()">تصدير نسخة</button><button class="btn blue" onclick="backupInput.click()">استعادة نسخة</button></div><input class="hidden" id="backupInput" type="file" accept="application/json,.json" onchange="importBackup(event)"></div>
   <div class="card"><div class="sectionTitle">ترحيل النسخة القديمة</div><div id="migrationText" class="small">يتم التحقق من بيانات النسخة السابقة تلقائيًا.</div><button class="btn secondary full" style="margin-top:8px" onclick="migrateLegacy(true)">إعادة فحص البيانات القديمة</button></div>
-  <div class="card"><div class="sectionTitle">إصدار التطبيق</div><div class="small">معاملاتي Local v14 • IndexedDB • OCR عربي محسّن • مرفقات • تحويل • سجل إجراءات • نسخ احتياطي</div></div>
+  <div class="card"><div class="sectionTitle">إصدار التطبيق</div><div class="small">معاملاتي Local v15 • OCR قابل لإعادة المحاولة • IndexedDB • مرفقات • تحويل • سجل إجراءات</div></div>
 </section>
 </div>
 
@@ -232,39 +232,28 @@ async function prepareImageForOCR(file){
 }
 
 async function recognizeArabicDocument(file){
-  if(typeof Tesseract==='undefined' || !Tesseract.createWorker){
-    throw new Error('تعذر تحميل محرك OCR');
+  if(typeof Tesseract==='undefined' || !Tesseract.recognize){
+    throw new Error('لم يتم تحميل محرك OCR');
   }
 
   const image=await prepareImageForOCR(file);
 
-  const worker=await Tesseract.createWorker('ara',1,{
-    workerPath:'https://cdn.jsdelivr.net/npm/tesseract.js@5.0.0/dist/worker.min.js',
-    corePath:'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.0',
-    langPath:'https://cdn.jsdelivr.net/npm/@tesseract.js-data/ara@1.0.0/4.0.0_best_int',
-    workerBlobURL:false,
+  // هذا هو مسار Tesseract البسيط الذي سبق أن عمل على نفس الآيفون.
+  const result=await Tesseract.recognize(image,'ara+eng',{
     logger:m=>{
       if(m.status==='loading tesseract core'){
-        setOCRProgress(.10,'تحميل محرك القراءة…');
+        setOCRProgress(.08,'تحميل محرك القراءة…');
       }else if(m.status==='loading language traineddata'){
-        setOCRProgress(.20,'تحميل بيانات اللغة العربية…');
+        setOCRProgress(.18,'تحميل بيانات اللغة العربية والإنجليزية…');
       }else if(m.status==='initializing api'){
-        setOCRProgress(.35,'تهيئة القراءة…');
+        setOCRProgress(.30,'تهيئة القراءة…');
       }else if(m.status==='recognizing text'){
-        setOCRProgress(.35+(m.progress||0)*.55,'جارٍ قراءة النص العربي من الخطاب…');
+        setOCRProgress(.30+(m.progress||0)*.62,'جارٍ قراءة نص الخطاب…');
       }
     }
   });
 
-  try{
-    await worker.setParameters({
-      preserve_interword_spaces:'1'
-    });
-    const result=await worker.recognize(image);
-    return (result?.data?.text||'').trim();
-  }finally{
-    try{await worker.terminate()}catch(e){}
-  }
+  return (result?.data?.text||'').trim();
 }
 
 async function quickScan(ev){
@@ -345,10 +334,54 @@ async function addAttachment(ev,txid){const file=ev.target.files?.[0];ev.target.
 async function openAttachment(id){const a=await getOne(STORES.att,id);if(!a?.blob)return;const url=URL.createObjectURL(a.blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),60000)}
 async function deleteAttachment(id,txid){if(!confirm('حذف هذا المرفق؟'))return;const a=await getOne(STORES.att,id);await delOne(STORES.att,id);await logAction(txid,'attachment_delete',`تم حذف المرفق: ${a?.name||''}`);openDetail(txid)}
 
+async function retryOCR(txid){
+  const atts=await byTx(STORES.att,txid);
+  const imgAtt=atts.find(a=>a.blob && String(a.type||'').startsWith('image/'));
+  if(!imgAtt){
+    alert('لا توجد صورة مستند داخل هذه المعاملة لإعادة قراءتها.');
+    return;
+  }
+
+  closeDrawer();
+  ocrBox.style.display='block';
+  ocrTitle.textContent='جارٍ إعادة قراءة المستند…';
+  ocrError.style.display='none';
+  setOCRProgress(.02,'تهيئة OCR…');
+
+  try{
+    const text=await recognizeArabicDocument(imgAtt.blob);
+    if(!text || text.replace(/\s+/g,'').length<6) throw new Error('لم يتم العثور على نص واضح');
+
+    const fields=extractOCRFields(text);
+    const tx=await getOne(STORES.tx,txid);
+    if(!tx) throw new Error('المعاملة غير موجودة');
+
+    if(fields.number) tx.number=fields.number;
+    if(fields.entity && fields.entity!=='مستند محلي') tx.entity=fields.entity;
+    if(fields.subject && fields.subject!=='مستند ممسوح') tx.subject=fields.subject;
+    tx.ocrText=text;
+    tx.notes=(fields.date?`تاريخ مقروء من المستند: ${fields.date}`:'') || (tx.notes||'');
+    tx.updatedAt=nowISO();
+    await putOne(STORES.tx,tx);
+    await logAction(txid,'ocr','تمت إعادة قراءة المستند وتحديث البيانات تلقائيًا');
+
+    setOCRProgress(1,'تمت القراءة وتحديث المعاملة.');
+    showToast('✅ تم تحديث بيانات المعاملة من المستند');
+    setTimeout(()=>{ocrBox.style.display='none';ocrFill.style.width='0';openDetail(txid);renderHome()},1300);
+  }catch(err){
+    console.error(err);
+    const reason=(err&&err.message)?err.message:String(err||'خطأ غير معروف');
+    ocrMsg.textContent='تعذرت إعادة القراءة.';
+    ocrError.textContent='سبب التعذر: '+reason;
+    ocrError.style.display='block';
+    showToast('تعذرت إعادة قراءة المستند');
+  }
+}
+
 async function openDetail(id){currentDetailId=id;const x=await getOne(STORES.tx,id);if(!x)return;const atts=(await byTx(STORES.att,id)).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));const acts=(await byTx(STORES.act,id)).sort((a,b)=>b.timestamp.localeCompare(a.timestamp));detailContent.innerHTML=`
 <div class="row"><div><h2 style="margin:0">${esc(x.number||'معاملة')}</h2><div class="sub">${esc(x.subject||'')}</div></div><button class="mini secondary" onclick="closeDrawer()">إغلاق</button></div>
 <div class="pillrow"><span class="tag">${esc(x.type)}</span><span class="tag ${isLate(x)?'late':''}">${isLate(x)?'متأخرة':esc(x.status)}</span><span class="tag local">محلي فقط</span></div>
-<div class="card"><div class="sectionTitle">بيانات المعاملة</div><div class="small"><b>الجهة:</b> ${esc(x.entity||'-')}<br><b>المسؤول:</b> ${esc(x.owner||'-')}<br><b>القسم الحالي:</b> ${esc(x.currentDepartment||'-')}<br><b>المحال إليه:</b> ${esc(x.currentAssignee||'-')}<br><b>الاستحقاق:</b> ${esc(x.dueDate||'-')}<br><b>الملاحظات:</b> ${esc(x.notes||'-')}</div><div class="actions"><button class="btn blue" onclick="startEdit('${id}')">تعديل</button><button class="btn danger" onclick="deleteTransaction('${id}')">حذف</button></div></div>
+<div class="card"><div class="sectionTitle">بيانات المعاملة</div><div class="small"><b>الجهة:</b> ${esc(x.entity||'-')}<br><b>المسؤول:</b> ${esc(x.owner||'-')}<br><b>القسم الحالي:</b> ${esc(x.currentDepartment||'-')}<br><b>المحال إليه:</b> ${esc(x.currentAssignee||'-')}<br><b>الاستحقاق:</b> ${esc(x.dueDate||'-')}<br><b>الملاحظات:</b> ${esc(x.notes||'-')}</div><div class="actions"><button class="btn blue" onclick="startEdit('${id}')">تعديل</button><button class="btn secondary" onclick="retryOCR('${id}')">إعادة قراءة المستند</button><button class="btn danger" onclick="deleteTransaction('${id}')">حذف</button></div></div>
 <div class="card"><div class="row"><div class="sectionTitle">المستندات والمرفقات</div><button class="mini blue" onclick="document.getElementById('att-${id}').click()">+ إضافة</button></div><input id="att-${id}" class="hidden" type="file" accept="image/*,application/pdf,.doc,.docx" onchange="addAttachment(event,'${id}')">${atts.length?atts.map(a=>`<div class="attach"><div class="attachInfo"><b>${esc(a.name)}</b><span>${formatBytes(a.size)} • ${esc(a.type)}</span></div><button class="mini blue" onclick="openAttachment('${a.id}')">فتح</button><button class="mini danger" onclick="deleteAttachment('${a.id}','${id}')">حذف</button></div>`).join(''):'<div class="empty">لا توجد مرفقات</div>'}</div>
 <div class="card"><div class="sectionTitle">تحويل المعاملة</div><label>القسم</label><input id="trDept" value="${esc(x.currentDepartment||'')}" placeholder="مثال: قسم الجراحة"><label>الموظف / المسؤول</label><input id="trPerson" value="${esc(x.currentAssignee||'')}" placeholder="اسم الموظف"><label>ملاحظة التحويل</label><textarea id="trNote" placeholder="ملاحظة اختيارية"></textarea><button class="btn full" onclick="transferTransaction('${id}')">تحويل وتسجيل الإجراء</button></div>
 <div class="card"><div class="sectionTitle">سجل الإجراءات</div><div class="timeline">${acts.length?acts.map(a=>`<div class="event"><strong>${esc(a.description)}</strong><div>${fmtDateTime(a.timestamp)}</div></div>`).join(''):'<div class="small">لا توجد إجراءات مسجلة.</div>'}</div></div>
@@ -364,7 +397,7 @@ async function requestPersistence(){if(!navigator.storage?.persist){showToast('�
 
 function blobToDataURL(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob)})}
 function dataURLToBlob(dataURL){const [h,b64]=dataURL.split(',');const type=(h.match(/data:(.*?);base64/)||[])[1]||'application/octet-stream';const bin=atob(b64);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);return new Blob([u8],{type})}
-async function exportBackup(){try{showToast('جارٍ تجهيز النسخة الاحتياطية…');const tx=await getAll(STORES.tx),actions=await getAll(STORES.act),attachments=await getAll(STORES.att);const packed=[];for(const a of attachments)packed.push({...a,blobData:await blobToDataURL(a.blob),blob:undefined});const data={app:'Moamalati',version:14,exportedAt:nowISO(),transactions:tx,actions,attachments:packed};const blob=new Blob([JSON.stringify(data)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');const d=new Date().toISOString().slice(0,10);a.href=url;a.download=`معاملاتي-نسخة-احتياطية-${d}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);showToast('✅ تم إنشاء النسخة الاحتياطية')}catch(e){console.error(e);alert('تعذر إنشاء النسخة الاحتياطية') }}
+async function exportBackup(){try{showToast('جارٍ تجهيز النسخة الاحتياطية…');const tx=await getAll(STORES.tx),actions=await getAll(STORES.act),attachments=await getAll(STORES.att);const packed=[];for(const a of attachments)packed.push({...a,blobData:await blobToDataURL(a.blob),blob:undefined});const data={app:'Moamalati',version:15,exportedAt:nowISO(),transactions:tx,actions,attachments:packed};const blob=new Blob([JSON.stringify(data)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');const d=new Date().toISOString().slice(0,10);a.href=url;a.download=`معاملاتي-نسخة-احتياطية-${d}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);showToast('✅ تم إنشاء النسخة الاحتياطية')}catch(e){console.error(e);alert('تعذر إنشاء النسخة الاحتياطية') }}
 async function importBackup(ev){const file=ev.target.files?.[0];ev.target.value='';if(!file)return;if(!confirm('سيتم دمج النسخة الاحتياطية مع البيانات الحالية. متابعة؟'))return;try{const data=JSON.parse(await file.text());if(data.app!=='Moamalati'||!Array.isArray(data.transactions))throw new Error('invalid');for(const x of data.transactions)await putOne(STORES.tx,x);for(const x of (data.actions||[]))await putOne(STORES.act,x);for(const x of (data.attachments||[])){const rec={...x,blob:dataURLToBlob(x.blobData)};delete rec.blobData;await putOne(STORES.att,rec)}showToast('✅ تمت استعادة النسخة');renderHome();updateStorage()}catch(e){console.error(e);alert('الملف غير صالح أو تعذرت الاستعادة')}}
 
 async function migrateLegacy(force=false){const meta=await getOne(STORES.meta,'legacyMigrated');if(meta&&!force){migrationText.textContent='تم فحص/ترحيل البيانات القديمة مسبقًا.';return}const keys=['moamalati_ocr_v3','moamalati_v2','moamalati_pwa_v2','moamalati_pwa_v1','transactions_v1'];let total=0;for(const key of keys){let arr=[];try{arr=JSON.parse(localStorage.getItem(key)||'[]')}catch{}if(!Array.isArray(arr))continue;for(const old of arr){const id=String(old.id||uid());if(await getOne(STORES.tx,id))continue;const x={id,number:old.n||old.number||`OLD-${Date.now()}`,type:old.t||old.type||'وارد',entity:old.e||old.entity||'',subject:old.s||old.subject||'معاملة قديمة',owner:old.o||old.owner||'',dueDate:old.d||old.due||'',status:old.st||old.status||'جديدة',notes:old.no||old.notes||'',ocrText:old.ocr||old.ocrText||'',createdAt:old.createdAt||nowISO(),updatedAt:nowISO(),currentDepartment:'',currentAssignee:''};await putOne(STORES.tx,x);await logAction(id,'migration','تم ترحيل المعاملة من النسخة القديمة');total++}}

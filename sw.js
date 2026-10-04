@@ -1,4 +1,4 @@
-const CACHE='moamalati-local-v14';
+const CACHE='moamalati-local-v15';
 const APP=[
   './',
   './index.html',
