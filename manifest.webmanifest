@@ -1,5 +1,5 @@
 {
-  "name": "معاملاتي - مسح ضوئي",
+  "name": "معاملاتي",
   "short_name": "معاملاتي",
   "description": "مسح مستندات مع زر التقاط يدوي ثابت وOCR عربي وإنجليزي",
   "lang": "ar",
@@ -11,7 +11,13 @@
   "theme_color": "#111827",
   "icons": [
     {
-      "src": "icon.png",
+      "src": "icon-192-v10.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512-v10.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
