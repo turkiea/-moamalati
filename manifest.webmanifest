@@ -1,0 +1,20 @@
+{
+  "name": "معاملاتي",
+  "short_name": "معاملاتي",
+  "description": "حفظ ومتابعة المعاملات من الآيفون",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#111827",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

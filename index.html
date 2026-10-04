@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="معاملاتي">
+<link rel="apple-touch-icon" href="icon.png"><link rel="manifest" href="manifest.webmanifest"><title>معاملاتي</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--danger:#b91c1c;--ok:#166534}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Tahoma,Arial,sans-serif}
+.app{max-width:760px;margin:auto;padding:calc(16px + env(safe-area-inset-top)) 14px calc(94px + env(safe-area-inset-bottom))}
+h1{font-size:30px;margin:4px 0}.sub{color:var(--muted);font-size:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.card,.stat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px}.stat b{display:block;font-size:28px;margin-top:5px}.card{margin:12px 0}
+label{display:block;color:var(--muted);font-size:13px;margin:11px 2px 6px}input,select,textarea,button{font:inherit}
+input,select,textarea{width:100%;padding:13px;border:1px solid var(--line);border-radius:12px;background:#fff}textarea{min-height:90px}
+button{border:0;border-radius:12px;padding:12px 14px;background:#111827;color:#fff;font-weight:700}.secondary{background:#eef2f7;color:#111827}
+.actions{display:flex;gap:8px;margin-top:14px}.actions button{flex:1}.item{padding:13px 0;border-bottom:1px solid var(--line)}.item:last-child{border-bottom:0}
+.top{display:flex;justify-content:space-between;gap:8px}.num{font-weight:800}.meta{font-size:13px;color:var(--muted);margin-top:5px}.tag{font-size:12px;padding:5px 8px;border-radius:99px;background:#eef2f7}.tag.late{background:#fee2e2;color:var(--danger)}.tag.done{background:#dcfce7;color:var(--ok)}
+nav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);border-top:1px solid var(--line);backdrop-filter:blur(12px);padding:8px 12px calc(8px + env(safe-area-inset-bottom))}
+.nav{max-width:760px;margin:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.nav button{background:transparent;color:#6b7280;padding:8px 2px;font-size:12px}.nav button.active{background:#f3f4f6;color:#111827}
+.screen{display:none}.screen.active{display:block}.empty{text-align:center;color:var(--muted);padding:28px 8px}.row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+</style></head><body>
+<div class="app">
+<section id="home" class="screen active"><h1>معاملاتي</h1><div class="sub">حفظ ومتابعة المعاملات من الآيفون</div>
+<div class="grid"><div class="stat">إجمالي المعاملات<b id="all">0</b></div><div class="stat">تحت الإجراء<b id="open">0</b></div><div class="stat">المتأخر<b id="late">0</b></div><div class="stat">المكتمل<b id="done">0</b></div></div>
+<div class="card"><div class="row"><strong>آخر المعاملات</strong><button class="secondary" onclick="go('new')">+ إضافة</button></div><div id="recent"></div></div></section>
+
+<section id="new" class="screen"><h1>معاملة جديدة</h1><div class="sub">إدخال بيانات المعاملة</div><div class="card">
+<label>رقم المعاملة</label><input id="n" placeholder="مثال: 2026-001"><label>النوع</label><select id="t"><option>وارد</option><option>صادر</option><option>داخلي</option></select>
+<label>الجهة</label><input id="e" placeholder="اسم الجهة"><label>الموضوع</label><textarea id="s" placeholder="موضوع المعاملة"></textarea>
+<label>المسؤول</label><input id="o" placeholder="اسم الموظف أو القسم"><label>تاريخ الاستحقاق</label><input id="d" type="date">
+<label>الحالة</label><select id="st"><option>جديدة</option><option>تحت الإجراء</option><option>بانتظار رد</option><option>مكتملة</option><option>مغلقة</option></select>
+<label>ملاحظات</label><textarea id="no" placeholder="ملاحظات"></textarea><div class="actions"><button onclick="save()">حفظ</button><button class="secondary" onclick="clearF()">مسح</button></div></div></section>
+
+<section id="search" class="screen"><h1>البحث</h1><div class="sub">رقم المعاملة أو الجهة أو الموضوع</div><div class="card"><input id="q" oninput="renderSearch()" placeholder="ابحث..."><div id="results"></div></div></section>
+<section id="settings" class="screen"><h1>الإعدادات</h1><div class="card"><strong>البيانات</strong><p class="meta">البيانات محفوظة على نفس الآيفون.</p><button class="secondary" onclick="demo()">إضافة بيانات تجريبية</button><button style="margin-top:8px;background:#991b1b" onclick="wipe()">حذف جميع البيانات</button></div></section>
+</div>
+<nav><div class="nav"><button class="active" data-x="home" onclick="go('home')">الرئيسية</button><button data-x="new" onclick="go('new')">إضافة</button><button data-x="search" onclick="go('search')">بحث</button><button data-x="settings" onclick="go('settings')">إعدادات</button></div></nav>
+<script>
+const K='moamalati_v2',gd=()=>JSON.parse(localStorage.getItem(K)||'[]'),sd=x=>localStorage.setItem(K,JSON.stringify(x));
+const esc=x=>String(x||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function go(x){document.querySelectorAll('.screen').forEach(a=>a.classList.remove('active'));document.getElementById(x).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.x===x));if(x==='home')render();if(x==='search')renderSearch();scrollTo(0,0)}
+function isLate(x){if(!x.d||['مكتملة','مغلقة'].includes(x.st))return false;let z=new Date();z.setHours(0,0,0,0);return new Date(x.d+'T00:00:00')<z}
+function card(x){let l=isLate(x),dn=['مكتملة','مغلقة'].includes(x.st),cls=dn?'done':l?'late':'',tag=l?'متأخرة':x.st;return `<div class=item><div class=top><div class=num>${esc(x.n||'بدون رقم')}</div><span class="tag ${cls}">${esc(tag)}</span></div><div style="margin-top:5px">${esc(x.s||'بدون موضوع')}</div><div class=meta>${esc(x.t)} • ${esc(x.e)} • ${esc(x.o)}</div></div>`}
+function render(){let a=gd();all.textContent=a.length;open.textContent=a.filter(x=>!['مكتملة','مغلقة'].includes(x.st)).length;late.textContent=a.filter(isLate).length;done.textContent=a.filter(x=>['مكتملة','مغلقة'].includes(x.st)).length;recent.innerHTML=a.length?a.slice().reverse().slice(0,6).map(card).join(''):'<div class=empty>لا توجد معاملات</div>'}
+function renderSearch(){let qv=(q.value||'').trim().toLowerCase(),a=gd().slice().reverse();if(qv)a=a.filter(x=>[x.n,x.e,x.s,x.o,x.t,x.st].join(' ').toLowerCase().includes(qv));results.innerHTML=a.length?a.map(card).join(''):'<div class=empty>لا توجد نتائج</div>'}
+function save(){let x={id:Date.now(),n:n.value.trim(),t:t.value,e:e.value.trim(),s:s.value.trim(),o:o.value.trim(),d:d.value,st:st.value,no:no.value.trim()};if(!x.n||!x.s){alert('رقم المعاملة والموضوع مطلوبان');return}let a=gd();a.push(x);sd(a);clearF();go('home')}
+function clearF(){[n,e,s,o,d,no].forEach(x=>x.value='');t.selectedIndex=0;st.selectedIndex=0}
+function wipe(){if(confirm('حذف جميع المعاملات؟')){localStorage.removeItem(K);render()}}
+function demo(){let a=gd(),z=new Date(),p=new Date(z),f=new Date(z);p.setDate(z.getDate()-2);f.setDate(z.getDate()+4);let fmt=x=>x.toISOString().slice(0,10);a.push({n:'2026-001',t:'وارد',e:'الإدارة',s:'طلب إفادة',o:'المتابعة',d:fmt(p),st:'تحت الإجراء',no:''},{n:'2026-002',t:'صادر',e:'قسم الجراحة',s:'رد على خطاب',o:'الصادر والوارد',d:fmt(f),st:'بانتظار رد',no:''});sd(a);render();alert('تمت إضافة بيانات تجريبية')}
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));render();
+</script></body></html>
