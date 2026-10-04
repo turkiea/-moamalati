@@ -1,17 +1,22 @@
 {
   "name": "معاملاتي",
   "short_name": "معاملاتي",
-  "description": "مسح مستندات مع زر التقاط يدوي ثابت وOCR عربي وإنجليزي",
+  "description": "نظام معاملات محلي بالكامل على الجهاز",
   "lang": "ar",
   "dir": "rtl",
-  "start_url": "./index.html?app=v11",
+  "start_url": "./index.html?app=v12",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f5f7fb",
-  "theme_color": "#111827",
+  "theme_color": "#0f172a",
   "icons": [
     {
-      "src": "app-icon-v11.png",
+      "src": "app-icon-180-v12.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "app-icon-512-v12.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
