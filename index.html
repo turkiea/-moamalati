@@ -63,16 +63,16 @@ nav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);bord
 
 <section id="home" class="screen active">
 <h1>معاملاتي</h1>
-<div class="sub">مسح المستند وقراءته وحفظه تلقائيًا</div>
+<div class="sub">تصوير المستند ثم قصّه وتحسينه كمسح ضوئي وحفظه تلقائيًا</div>
 
-<button class="scanbtn" onclick="startAutoScanner()">📷 مسح ضوئي تلقائي</button>
-<button class="secondary" style="width:100%;margin-top:8px" onclick="scanInput.click()">التقاط صورة عادي</button>
-<input id="scanInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="scanDocument(event)">
+<button class="scanbtn" onclick="startAutoScanner()">📷 مسح ضوئي حقيقي</button>
+<button class="secondary" style="width:100%;margin-top:8px" onclick="scanInput.click()">تصوير مستند وتحويله لمسح</button>
+<input id="scanInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="scanDocumentAsTrueScan(event)">
 
 <div id="scanProgress" class="progress">
   <strong id="scanTitle">جارٍ قراءة المستند…</strong>
   <div class="bar"><i id="scanBar"></i></div>
-  <div id="scanMsg" class="note" style="margin-top:8px">لا تغلق الصفحة حتى يكتمل الحفظ.</div>
+  <div id="scanMsg" class="note" style="margin-top:8px">لا تغلق الصفحة حتى يكتمل الحفظ.</div><img id="scanPreview" alt="معاينة المسح" style="display:none;width:100%;margin-top:12px;border-radius:12px;border:1px solid var(--line)">
 </div>
 
 <div class="grid">
@@ -116,7 +116,7 @@ nav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);bord
 <h1>الإعدادات</h1>
 <div class="card">
 <strong>OCR تلقائي</strong>
-<p class="note">عند تصوير مستند، تتم القراءة والحفظ تلقائيًا بدون شاشة اعتماد. النص الكامل يُحفظ للبحث لاحقًا.</p>
+<p class="note">عند تصوير المستند، يحاول البرنامج اكتشاف حدود الورقة وقصّها وتصحيح المنظور وتحويلها إلى أبيض وأسود كمسح ضوئي، ثم يقرأ النص ويحفظه تلقائيًا بدون اعتماد.</p>
 <button class="secondary" onclick="demo()">إضافة بيانات تجريبية</button>
 <button style="margin-top:8px;background:#991b1b" onclick="wipe()">حذف جميع البيانات</button>
 </div>
@@ -400,7 +400,7 @@ async function waitForOpenCV(timeout=12000){
 async function startAutoScanner(){
   if(capturing) return;
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-    alert('المتصفح لا يدعم الكاميرا المباشرة. استخدم التقاط صورة عادي.');
+    alert('المتصفح لا يدعم الكاميرا المباشرة. استخدم تصوير مستند وتحويله لمسح.');
     return;
   }
 
@@ -551,7 +551,8 @@ async function manualCapture(){
     c.height=scanVideo.videoHeight;
     c.getContext('2d').drawImage(scanVideo,0,0);
     stopAutoScanner();
-    await processScannedCanvas(c);
+    const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',0.92));
+    await scanDocumentAsTrueScan({target:{files:[new File([blob],'scan.jpg',{type:'image/jpeg'})],value:''}});
   }catch(err){
     capturing=false;
     console.error(err);
@@ -669,11 +670,235 @@ async function processScannedCanvas(canvas){
   }catch(err){
     console.error(err);
     scanTitle.textContent='تعذرت قراءة المستند';
-    scanMsg.textContent='حاول بإضاءة أفضل أو استخدم التقاط صورة عادي.';
+    scanMsg.textContent='حاول بإضاءة أفضل أو استخدم تصوير مستند وتحويله لمسح.';
     scanBar.style.width='0';
     showToast('تعذرت قراءة المستند');
   }finally{
     capturing=false;
+  }
+}
+
+
+
+async function fileToImage(file){
+  return new Promise((resolve,reject)=>{
+    const url=URL.createObjectURL(file);
+    const img=new Image();
+    img.onload=()=>{URL.revokeObjectURL(url);resolve(img)};
+    img.onerror=e=>{URL.revokeObjectURL(url);reject(e)};
+    img.src=url;
+  });
+}
+
+async function ensureCV(){
+  const started=Date.now();
+  while(Date.now()-started<15000){
+    if(window.cv && cv.Mat) return true;
+    await new Promise(r=>setTimeout(r,200));
+  }
+  return false;
+}
+
+function orderPoints(pts){
+  const sums=pts.map(p=>p.x+p.y);
+  const diffs=pts.map(p=>p.x-p.y);
+  return [
+    pts[sums.indexOf(Math.min(...sums))],
+    pts[diffs.indexOf(Math.max(...diffs))],
+    pts[sums.indexOf(Math.max(...sums))],
+    pts[diffs.indexOf(Math.min(...diffs))]
+  ];
+}
+
+function detectLargestDocument(src){
+  let gray=new cv.Mat(), blur=new cv.Mat(), edges=new cv.Mat();
+  let contours=new cv.MatVector(), hierarchy=new cv.Mat();
+  try{
+    cv.cvtColor(src,gray,cv.COLOR_RGBA2GRAY);
+    cv.GaussianBlur(gray,blur,new cv.Size(5,5),0,0,cv.BORDER_DEFAULT);
+    cv.Canny(blur,edges,50,150);
+    cv.dilate(edges,edges,new cv.Mat(),new cv.Point(-1,-1),1);
+
+    cv.findContours(edges,contours,hierarchy,cv.RETR_LIST,cv.CHAIN_APPROX_SIMPLE);
+
+    let best=null, bestArea=0;
+    const minArea=src.cols*src.rows*0.12;
+
+    for(let i=0;i<contours.size();i++){
+      const cnt=contours.get(i);
+      const peri=cv.arcLength(cnt,true);
+      const approx=new cv.Mat();
+      cv.approxPolyDP(cnt,approx,0.02*peri,true);
+      const area=Math.abs(cv.contourArea(approx));
+
+      if(approx.rows===4 && area>minArea && area>bestArea && cv.isContourConvex(approx)){
+        const pts=[];
+        for(let j=0;j<4;j++){
+          const p=approx.intPtr(j,0);
+          pts.push({x:p[0],y:p[1]});
+        }
+        best=orderPoints(pts);
+        bestArea=area;
+      }
+      approx.delete();
+      cnt.delete();
+    }
+    return best;
+  }finally{
+    [gray,blur,edges,hierarchy].forEach(m=>{try{m.delete()}catch(e){}});
+    try{contours.delete()}catch(e){}
+  }
+}
+
+function warpAndEnhance(src,quad){
+  let warped=null;
+  let cleanup=[];
+
+  try{
+    if(quad){
+      const [tl,tr,br,bl]=quad;
+      const w1=Math.hypot(tr.x-tl.x,tr.y-tl.y);
+      const w2=Math.hypot(br.x-bl.x,br.y-bl.y);
+      const h1=Math.hypot(bl.x-tl.x,bl.y-tl.y);
+      const h2=Math.hypot(br.x-tr.x,br.y-tr.y);
+      const outW=Math.max(700,Math.round(Math.max(w1,w2)));
+      const outH=Math.max(900,Math.round(Math.max(h1,h2)));
+
+      const srcTri=cv.matFromArray(4,1,cv.CV_32FC2,[
+        tl.x,tl.y,tr.x,tr.y,br.x,br.y,bl.x,bl.y
+      ]);
+      const dstTri=cv.matFromArray(4,1,cv.CV_32FC2,[
+        0,0,outW-1,0,outW-1,outH-1,0,outH-1
+      ]);
+      const M=cv.getPerspectiveTransform(srcTri,dstTri);
+      warped=new cv.Mat();
+      cv.warpPerspective(src,warped,M,new cv.Size(outW,outH),cv.INTER_LINEAR,cv.BORDER_REPLICATE);
+      cleanup.push(srcTri,dstTri,M);
+    }else{
+      warped=src.clone();
+    }
+
+    // Scanner-style enhancement: grayscale, denoise, adaptive threshold
+    let gray=new cv.Mat(), denoise=new cv.Mat(), bw=new cv.Mat(), rgba=new cv.Mat();
+    cv.cvtColor(warped,gray,cv.COLOR_RGBA2GRAY);
+    cv.GaussianBlur(gray,denoise,new cv.Size(3,3),0,0,cv.BORDER_DEFAULT);
+    cv.adaptiveThreshold(
+      denoise,bw,255,
+      cv.ADAPTIVE_THRESH_GAUSSIAN_C,
+      cv.THRESH_BINARY,31,15
+    );
+    cv.cvtColor(bw,rgba,cv.COLOR_GRAY2RGBA);
+    cleanup.push(gray,denoise,bw);
+
+    return {mat:rgba, cleanup:[...cleanup,warped]};
+  }catch(err){
+    cleanup.forEach(m=>{try{m.delete()}catch(e){}});
+    try{warped&&warped.delete()}catch(e){}
+    throw err;
+  }
+}
+
+async function processPhotoIntoScan(file){
+  const cvReady=await ensureCV();
+  if(!cvReady) throw new Error('OpenCV لم يحمّل');
+
+  const img=await fileToImage(file);
+
+  // Downscale huge images for reliability on iPhone memory
+  const maxSide=2200;
+  const scale=Math.min(1,maxSide/Math.max(img.naturalWidth,img.naturalHeight));
+  const c=document.createElement('canvas');
+  c.width=Math.round(img.naturalWidth*scale);
+  c.height=Math.round(img.naturalHeight*scale);
+  c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+
+  let src=cv.imread(c);
+  try{
+    const quad=detectLargestDocument(src);
+    const {mat,cleanup}=warpAndEnhance(src,quad);
+    const out=document.createElement('canvas');
+    out.width=mat.cols;
+    out.height=mat.rows;
+    cv.imshow(out,mat);
+
+    try{mat.delete()}catch(e){}
+    cleanup.forEach(m=>{try{m.delete()}catch(e){}});
+
+    return {canvas:out,foundPaper:!!quad};
+  }finally{
+    try{src.delete()}catch(e){}
+  }
+}
+
+async function scanDocumentAsTrueScan(ev){
+  const file=ev.target.files && ev.target.files[0];
+  ev.target.value='';
+  if(!file) return;
+
+  scanProgress.style.display='block';
+  scanTitle.textContent='جارٍ تحويل الصورة إلى مسح ضوئي…';
+  setProgress(.05,'اكتشاف حدود الورقة وتصحيح المنظور…');
+  scanPreview.style.display='none';
+
+  try{
+    const scanned=await processPhotoIntoScan(file);
+
+    setProgress(.30, scanned.foundPaper
+      ? 'تم اكتشاف الورقة وقصّها تلقائيًا وتحسينها.'
+      : 'لم تُكتشف الحدود بدقة، تم تحسين الصورة كاملة كمسح ضوئي.'
+    );
+
+    scanPreview.src=scanned.canvas.toDataURL('image/jpeg',0.82);
+    scanPreview.style.display='block';
+
+    if(typeof Tesseract==='undefined') throw new Error('تعذر تحميل OCR');
+
+    const result=await Tesseract.recognize(scanned.canvas,'ara+eng',{
+      logger:m=>{
+        if(m.status==='recognizing text'){
+          setProgress(.35+(m.progress||0)*.55,'جارٍ قراءة النص من النسخة الممسوحة…');
+        }
+      }
+    });
+
+    const text=(result?.data?.text||'').trim();
+    setProgress(.93,'تمت القراءة، جارٍ الحفظ تلقائيًا…');
+
+    const ex=extractData(text);
+    const record={
+      id:String(Date.now()),
+      n:ex.num,
+      t:'وارد',
+      e:ex.entity,
+      s:ex.subject,
+      o:'OCR تلقائي',
+      d:'',
+      st:'جديدة',
+      no:(ex.date ? 'تاريخ مقروء من المستند: '+ex.date : '') + (scanned.foundPaper ? ' • مسح ضوئي تلقائي' : ' • تحسين ضوئي تلقائي'),
+      ocr:text,
+      scanned:true,
+      trueScan:true
+    };
+
+    const a=gd();
+    a.push(record);
+    sd(a);
+
+    setProgress(1,'تم المسح الضوئي والحفظ بنجاح.');
+    render();
+    showToast('✅ تم تحويل الصورة إلى مسح ضوئي وحفظها');
+    setTimeout(()=>{
+      scanProgress.style.display='none';
+      scanBar.style.width='0';
+      scanPreview.style.display='none';
+    },2200);
+
+  }catch(err){
+    console.error(err);
+    scanTitle.textContent='تعذر إنشاء المسح الضوئي';
+    scanMsg.textContent='حاول بصورة أوضح، وخلفية مغايرة للورقة، وإضاءة جيدة.';
+    scanBar.style.width='0';
+    showToast('تعذر المسح الضوئي');
   }
 }
 

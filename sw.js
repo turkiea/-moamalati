@@ -1,4 +1,4 @@
-const CACHE='moamalati-auto-scan-v6';
+const CACHE='moamalati-true-scan-v8';
 const APP=['./','./index.html','./manifest.webmanifest','./icon.png'];
 
 self.addEventListener('install',e=>{
