@@ -34,7 +34,7 @@ button{border:0;border-radius:12px;padding:12px 14px;background:#111827;color:#f
 .tag{font-size:12px;padding:5px 8px;border-radius:99px;background:#eef2f7;white-space:nowrap}
 .tag.late{background:#fee2e2;color:var(--danger)}.tag.done{background:#dcfce7;color:var(--ok)}.tag.ocr{background:#dbeafe;color:#1e40af}
 .ocrtext{display:none;margin-top:10px;padding:10px;background:#f8fafc;border:1px solid var(--line);border-radius:10px;font-size:12px;line-height:1.8;white-space:pre-wrap;max-height:220px;overflow:auto}
-.smallbtn{margin-top:8px;background:#eef2f7;color:#111827;padding:7px 10px;font-size:12px}
+.smallbtn{margin-top:8px;background:#eef2f7;color:#111827;padding:7px 10px;font-size:12px}.deletebtn{margin-top:8px;background:#fee2e2;color:#b91c1c;padding:7px 10px;font-size:12px}.editbtn{margin-top:8px;background:#dbeafe;color:#1d4ed8;padding:7px 10px;font-size:12px}
 nav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);border-top:1px solid var(--line);backdrop-filter:blur(12px);padding:8px 12px calc(8px + env(safe-area-inset-bottom));z-index:20}
 .nav{max-width:760px;margin:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.nav button{background:transparent;color:#6b7280;padding:8px 2px;font-size:12px}
 .nav button.active{background:#f3f4f6;color:#111827}.screen{display:none}.screen.active{display:block}.empty{text-align:center;color:var(--muted);padding:28px 8px}
@@ -69,13 +69,13 @@ nav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);bord
 </div>
 
 <div class="card">
-  <div class="row"><strong>آخر المعاملات</strong><button class="secondary" onclick="go('new')">+ إضافة يدويًا</button></div>
+  <div class="row"><strong>آخر المعاملات</strong><button class="secondary" onclick="finishEdit();go('new')">+ إضافة يدويًا</button></div>
   <div id="recent"></div>
 </div>
 </section>
 
 <section id="new" class="screen">
-<h1>معاملة جديدة</h1><div class="sub">إدخال يدوي عند الحاجة</div>
+<h1 id="formTitle">معاملة جديدة</h1><div id="formSub" class="sub">إدخال يدوي عند الحاجة</div>
 <div class="card">
 <label>رقم المعاملة</label><input id="n" placeholder="مثال: 2026-001">
 <label>النوع</label><select id="t"><option>وارد</option><option>صادر</option><option>داخلي</option></select>
@@ -85,7 +85,7 @@ nav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);bord
 <label>تاريخ الاستحقاق</label><input id="d" type="date">
 <label>الحالة</label><select id="st"><option>جديدة</option><option>تحت الإجراء</option><option>بانتظار رد</option><option>مكتملة</option><option>مغلقة</option></select>
 <label>ملاحظات</label><textarea id="no" placeholder="ملاحظات"></textarea>
-<div class="actions"><button onclick="save()">حفظ</button><button class="secondary" onclick="clearF()">مسح</button></div>
+<div class="actions"><button id="saveBtn" onclick="save()">حفظ</button><button id="cancelEditBtn" class="secondary" onclick="cancelEdit()">مسح</button></div>
 </div>
 </section>
 
@@ -114,13 +114,14 @@ nav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);bord
 
 <nav><div class="nav">
 <button class="active" data-x="home" onclick="go('home')">الرئيسية</button>
-<button data-x="new" onclick="go('new')">إضافة</button>
+<button data-x="new" onclick="finishEdit();go('new')">إضافة</button>
 <button data-x="search" onclick="go('search')">بحث</button>
 <button data-x="settings" onclick="go('settings')">إعدادات</button>
 </div></nav>
 
 <script>
 const K='moamalati_ocr_v3';
+let editingId=null;
 const gd=()=>JSON.parse(localStorage.getItem(K)||'[]');
 const sd=x=>localStorage.setItem(K,JSON.stringify(x));
 const esc=x=>String(x||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -143,8 +144,12 @@ function isLate(x){
 function card(x){
   let l=isLate(x),dn=['مكتملة','مغلقة'].includes(x.st),cls=dn?'done':l?'late':'',tag=l?'متأخرة':x.st;
   let ocr = x.ocr ? `<span class="tag ocr">OCR</span>` : '';
-  let view = x.ocr ? `<button class="smallbtn" onclick="toggleOCR('${x.id}')">عرض النص المقروء</button>
-    <div class="ocrtext" id="ocr-${x.id}">${esc(x.ocr)}</div>` : '';
+  let view = `<div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${x.ocr ? `<button class="smallbtn" onclick="toggleOCR('${x.id}')">عرض النص المقروء</button>` : ''}
+      <button class="editbtn" onclick="editTx('${x.id}')">تعديل المعاملة</button>
+      <button class="deletebtn" onclick="deleteTx('${x.id}')">حذف المعاملة</button>
+    </div>
+    ${x.ocr ? `<div class="ocrtext" id="ocr-${x.id}">${esc(x.ocr)}</div>` : ''}`;
   return `<div class=item>
     <div class=top>
       <div><div class=num>${esc(x.n||'بدون رقم')}</div><div style="margin-top:5px">${esc(x.s||'بدون موضوع')}</div></div>
@@ -178,14 +183,103 @@ function renderSearch(){
 }
 
 function save(){
-  let x={id:String(Date.now()),n:n.value.trim(),t:t.value,e:e.value.trim(),s:s.value.trim(),o:o.value.trim(),d:d.value,st:st.value,no:no.value.trim(),ocr:''};
-  if(!x.n||!x.s){alert('رقم المعاملة والموضوع مطلوبان');return}
-  let a=gd();a.push(x);sd(a);clearF();go('home');
+  if(!n.value.trim()||!s.value.trim()){
+    alert('رقم المعاملة والموضوع مطلوبان');
+    return;
+  }
+
+  let a=gd();
+
+  if(editingId){
+    const idx=a.findIndex(x=>String(x.id)===String(editingId));
+    if(idx===-1){
+      alert('تعذر العثور على المعاملة');
+      return;
+    }
+
+    const old=a[idx];
+    a[idx]={
+      ...old,
+      n:n.value.trim(),
+      t:t.value,
+      e:e.value.trim(),
+      s:s.value.trim(),
+      o:o.value.trim(),
+      d:d.value,
+      st:st.value,
+      no:no.value.trim()
+    };
+    sd(a);
+    finishEdit();
+    go('home');
+    showToast('✅ تم تعديل المعاملة');
+    return;
+  }
+
+  let x={
+    id:String(Date.now()),
+    n:n.value.trim(),
+    t:t.value,
+    e:e.value.trim(),
+    s:s.value.trim(),
+    o:o.value.trim(),
+    d:d.value,
+    st:st.value,
+    no:no.value.trim(),
+    ocr:''
+  };
+
+  a.push(x);
+  sd(a);
+  clearF();
+  go('home');
+  showToast('✅ تم حفظ المعاملة');
 }
 
 function clearF(){
   [n,e,s,o,d,no].forEach(x=>x.value='');
-  t.selectedIndex=0;st.selectedIndex=0;
+  t.selectedIndex=0;
+  st.selectedIndex=0;
+}
+
+function editTx(id){
+  const x=gd().find(v=>String(v.id)===String(id));
+  if(!x) return;
+
+  editingId=String(id);
+  n.value=x.n||'';
+  t.value=x.t||'وارد';
+  e.value=x.e||'';
+  s.value=x.s||'';
+  o.value=x.o||'';
+  d.value=x.d||'';
+  st.value=x.st||'جديدة';
+  no.value=x.no||'';
+
+  formTitle.textContent='تعديل المعاملة';
+  formSub.textContent='عدّل البيانات ثم اضغط حفظ التعديلات';
+  saveBtn.textContent='حفظ التعديلات';
+  cancelEditBtn.textContent='إلغاء';
+
+  go('new');
+}
+
+function finishEdit(){
+  editingId=null;
+  clearF();
+  formTitle.textContent='معاملة جديدة';
+  formSub.textContent='إدخال يدوي عند الحاجة';
+  saveBtn.textContent='حفظ';
+  cancelEditBtn.textContent='مسح';
+}
+
+function cancelEdit(){
+  if(editingId){
+    finishEdit();
+    go('home');
+  }else{
+    clearF();
+  }
 }
 
 function arabicDigitsToEnglish(str){
@@ -309,6 +403,15 @@ async function scanDocument(ev){
     scanBar.style.width='0';
     showToast('تعذرت قراءة المستند');
   }
+}
+
+function deleteTx(id){
+  if(!confirm('هل تريد حذف هذه المعاملة؟')) return;
+  const a=gd().filter(x=>String(x.id)!==String(id));
+  sd(a);
+  render();
+  if(document.getElementById('search')?.classList.contains('active')) renderSearch();
+  showToast('تم حذف المعاملة');
 }
 
 function wipe(){
