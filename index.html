@@ -115,7 +115,7 @@ nav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);bord
 <section id="settings" class="screen">
 <h1>الإعدادات</h1>
 <div class="card">
-<strong>OCR تلقائي</strong>
+<strong>OCR + مسح ضوئي — إصدار 9</strong>
 <p class="note">عند تصوير المستند، يحاول البرنامج اكتشاف حدود الورقة وقصّها وتصحيح المنظور وتحويلها إلى أبيض وأسود كمسح ضوئي، ثم يقرأ النص ويحفظه تلقائيًا بدون اعتماد.</p>
 <button class="secondary" onclick="demo()">إضافة بيانات تجريبية</button>
 <button style="margin-top:8px;background:#991b1b" onclick="wipe()">حذف جميع البيانات</button>
@@ -133,7 +133,7 @@ nav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);bord
     <div class="scanFrame"></div>
     <div id="autoScanStatus" class="scanStatus">وجّه الكاميرا نحو المستند</div>
     <div class="scanBottom">
-      <button onclick="manualCapture()">التقاط الآن</button>
+      <button id="manualCaptureBtn" onclick="manualCapture()" style="font-size:18px;padding:15px 20px">التقاط الآن</button>
       <button class="danger" onclick="stopAutoScanner()">إلغاء</button>
     </div>
   </div>
@@ -542,21 +542,147 @@ function detectDocumentFrame(){
   }
 }
 
+let manualBusy=false;
+
 async function manualCapture(){
-  if(capturing || !scanVideo.videoWidth) return;
+  if(manualBusy) return;
+
+  if(!scanVideo.videoWidth || !scanVideo.videoHeight){
+    autoScanStatus.textContent='انتظر لحظة حتى تجهز الكاميرا ثم اضغط مرة أخرى';
+    return;
+  }
+
+  manualBusy=true;
   capturing=true;
+  autoScanStatus.textContent='تم الالتقاط… جارٍ إنشاء المسح الضوئي';
+
+  // أوقف الكشف التلقائي فورًا حتى لا يمنع زر "التقاط الآن"
+  if(detectorTimer){
+    clearInterval(detectorTimer);
+    detectorTimer=null;
+  }
+
   try{
     const c=document.createElement('canvas');
     c.width=scanVideo.videoWidth;
     c.height=scanVideo.videoHeight;
-    c.getContext('2d').drawImage(scanVideo,0,0);
-    stopAutoScanner();
-    const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',0.92));
-    await scanDocumentAsTrueScan({target:{files:[new File([blob],'scan.jpg',{type:'image/jpeg'})],value:''}});
+    const ctx=c.getContext('2d');
+    ctx.drawImage(scanVideo,0,0,c.width,c.height);
+
+    // أوقف الكاميرا وأغلق شاشة التصوير فور الضغط
+    if(scannerStream){
+      scannerStream.getTracks().forEach(t=>t.stop());
+      scannerStream=null;
+    }
+    scanVideo.srcObject=null;
+    scanner.classList.remove('active');
+
+    scanProgress.style.display='block';
+    scanTitle.textContent='جارٍ إنشاء المسح الضوئي…';
+    setProgress(.08,'تم التقاط المستند، جارٍ القص والتحسين…');
+
+    // محاولة المسح الحقيقي: اكتشاف الورقة + تصحيح المنظور + أبيض وأسود
+    let scannedCanvas=c;
+    let foundPaper=false;
+
+    try{
+      const ready=await ensureCV();
+      if(ready){
+        const maxSide=2200;
+        const scale=Math.min(1,maxSide/Math.max(c.width,c.height));
+        const work=document.createElement('canvas');
+        work.width=Math.round(c.width*scale);
+        work.height=Math.round(c.height*scale);
+        work.getContext('2d').drawImage(c,0,0,work.width,work.height);
+
+        let srcMat=cv.imread(work);
+        try{
+          const quad=detectLargestDocument(srcMat);
+          const result=warpAndEnhance(srcMat,quad);
+          const out=document.createElement('canvas');
+          out.width=result.mat.cols;
+          out.height=result.mat.rows;
+          cv.imshow(out,result.mat);
+
+          try{result.mat.delete()}catch(e){}
+          result.cleanup.forEach(m=>{try{m.delete()}catch(e){}});
+
+          scannedCanvas=out;
+          foundPaper=!!quad;
+        }finally{
+          try{srcMat.delete()}catch(e){}
+        }
+      }
+    }catch(scanErr){
+      console.warn('Scan enhancement fallback:',scanErr);
+      // في حال تعذر OpenCV نكمل بالصورة نفسها بدل أن يتوقف الزر
+      scannedCanvas=c;
+      foundPaper=false;
+    }
+
+    scanPreview.src=scannedCanvas.toDataURL('image/jpeg',0.82);
+    scanPreview.style.display='block';
+    setProgress(.32,foundPaper
+      ? 'تم اكتشاف الورقة وقصّها وتصحيحها.'
+      : 'تم التقاط الصورة. جارٍ قراءة النص…'
+    );
+
+    if(typeof Tesseract==='undefined'){
+      throw new Error('تعذر تحميل OCR');
+    }
+
+    const result=await Tesseract.recognize(scannedCanvas,'ara+eng',{
+      logger:m=>{
+        if(m.status==='recognizing text'){
+          setProgress(.35+(m.progress||0)*.55,'جارٍ قراءة النص من المستند…');
+        }
+      }
+    });
+
+    const text=(result?.data?.text||'').trim();
+    const ex=extractData(text);
+
+    setProgress(.94,'تمت القراءة، جارٍ الحفظ…');
+
+    const record={
+      id:String(Date.now()),
+      n:ex.num,
+      t:'وارد',
+      e:ex.entity,
+      s:ex.subject,
+      o:'OCR تلقائي',
+      d:'',
+      st:'جديدة',
+      no:(ex.date ? 'تاريخ مقروء من المستند: '+ex.date : '') +
+         (foundPaper ? ' • مسح ضوئي يدوي' : ' • التقاط يدوي'),
+      ocr:text,
+      scanned:true,
+      trueScan:foundPaper
+    };
+
+    const a=gd();
+    a.push(record);
+    sd(a);
+
+    setProgress(1,'تم حفظ المستند بنجاح.');
+    render();
+    showToast('✅ تم التقاط المستند وحفظه');
+
+    setTimeout(()=>{
+      scanProgress.style.display='none';
+      scanBar.style.width='0';
+      scanPreview.style.display='none';
+    },2200);
+
   }catch(err){
-    capturing=false;
     console.error(err);
-    showToast('تعذر التقاط المستند');
+    scanTitle.textContent='تعذر إكمال المسح';
+    scanMsg.textContent='تم التقاط الصورة ولكن تعذرت القراءة. تأكد من الإنترنت وحاول مرة أخرى.';
+    scanBar.style.width='0';
+    showToast('تعذر إكمال المسح');
+  }finally{
+    manualBusy=false;
+    capturing=false;
   }
 }
 
