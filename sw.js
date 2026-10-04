@@ -1,4 +1,4 @@
-const CACHE='moamalati-ocr-v5';
+const CACHE='moamalati-auto-scan-v6';
 const APP=['./','./index.html','./manifest.webmanifest','./icon.png'];
 
 self.addEventListener('install',e=>{
