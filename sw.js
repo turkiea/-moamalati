@@ -1,5 +1,5 @@
-const CACHE='moamalati-custom-icon-v10';
-const APP=['./','./index.html','./manifest.webmanifest','./icon-180-v10.png','./icon-192-v10.png','./icon-512-v10.png'];
+const CACHE='moamalati-icon-v11';
+const APP=['./','./index.html','./manifest.webmanifest','./app-icon-v11.png'];
 
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(APP)));
