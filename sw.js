@@ -1,11 +1,5 @@
-const CACHE='moamalati-local-v15';
-const APP=[
-  './',
-  './index.html',
-  './manifest.webmanifest',
-  './app-icon-180-v12.png',
-  './app-icon-512-v12.png'
-];
+const CACHE='moamalati-icon-v11';
+const APP=['./','./index.html','./manifest.webmanifest','./app-icon-v11.png'];
 
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(APP)));
@@ -22,13 +16,14 @@ self.addEventListener('activate',e=>{
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET') return;
 
-  if(e.request.mode==='navigate'){
+  const isPage = e.request.mode==='navigate' || e.request.url.endsWith('/index.html');
+  if(isPage){
     e.respondWith(
       fetch(e.request).then(resp=>{
-        const cp=resp.clone();
-        caches.open(CACHE).then(c=>c.put('./index.html',cp)).catch(()=>{});
+        const copy=resp.clone();
+        caches.open(CACHE).then(c=>c.put(e.request,copy)).catch(()=>{});
         return resp;
-      }).catch(()=>caches.match('./index.html'))
+      }).catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html')))
     );
     return;
   }
@@ -36,8 +31,8 @@ self.addEventListener('fetch',e=>{
   e.respondWith(
     caches.match(e.request).then(cached=>{
       return cached || fetch(e.request).then(resp=>{
-        const cp=resp.clone();
-        caches.open(CACHE).then(c=>c.put(e.request,cp)).catch(()=>{});
+        const copy=resp.clone();
+        caches.open(CACHE).then(c=>c.put(e.request,copy)).catch(()=>{});
         return resp;
       });
     })

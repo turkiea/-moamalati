@@ -3,407 +3,1115 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0f172a">
+<meta name="theme-color" content="#111827">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="معاملاتي">
-<link rel="apple-touch-icon" sizes="180x180" href="app-icon-180-v12.png?v=14">
-<link rel="manifest" href="manifest.webmanifest?v=14">
-<link rel="icon" href="app-icon-512-v12.png?v=14" type="image/png">
+<link rel="apple-touch-icon" sizes="180x180" href="app-icon-v11.png?rev=11">
+<link rel="apple-touch-icon-precomposed" href="app-icon-v11.png?rev=11">
+<link rel="manifest" href="manifest.webmanifest?v=11">
+<link rel="icon" type="image/png" href="app-icon-v11.png?rev=11">
 <title>معاملاتي</title>
+<script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
-:root{--bg:#f4f6fa;--card:#fff;--text:#111827;--muted:#667085;--line:#e5e7eb;--nav:#0f172a;--blue:#2563eb;--green:#15803d;--red:#b42318;--amber:#b54708}
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Tahoma,Arial,sans-serif}
-button,input,select,textarea{font:inherit}button{cursor:pointer}.app{max-width:800px;margin:auto;padding:calc(16px + env(safe-area-inset-top)) 14px calc(102px + env(safe-area-inset-bottom))}
-h1{font-size:30px;margin:3px 0}.sub{font-size:14px;color:var(--muted);line-height:1.7}.privacy{display:flex;gap:8px;align-items:center;margin:12px 0;background:#ecfdf3;color:#166534;border:1px solid #bbf7d0;padding:10px 12px;border-radius:14px;font-size:13px}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:14px 0}.stat,.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 1px 2px rgba(16,24,40,.03)}.stat b{display:block;font-size:28px;margin-top:5px}.card{margin:12px 0}
-.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.wrap{flex-wrap:wrap}.btn{border:0;border-radius:12px;padding:12px 14px;background:var(--nav);color:#fff;font-weight:700}.secondary{background:#eef2f7;color:#111827}.blue{background:#eff6ff;color:#1d4ed8}.danger{background:#fef3f2;color:#b42318}.success{background:#ecfdf3;color:#166534}.full{width:100%}.scan{padding:16px;font-size:16px;margin-top:10px}
-label{display:block;color:var(--muted);font-size:13px;margin:11px 2px 6px}input,select,textarea{width:100%;padding:13px;border:1px solid var(--line);border-radius:12px;background:#fff;color:#111827}textarea{min-height:86px;resize:vertical}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actions{display:flex;gap:8px;margin-top:14px}.actions>*{flex:1}
-.item{padding:13px 0;border-bottom:1px solid var(--line)}.item:last-child{border-bottom:0}.num{font-weight:800}.meta{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.6}.tag{display:inline-flex;align-items:center;font-size:11px;padding:5px 8px;border-radius:999px;background:#f2f4f7;color:#344054}.tag.late{background:#fef3f2;color:#b42318}.tag.done{background:#ecfdf3;color:#166534}.tag.local{background:#eff6ff;color:#1d4ed8}
-.screen{display:none}.screen.active{display:block}.empty{padding:30px 8px;text-align:center;color:var(--muted)}
-nav{position:fixed;bottom:0;left:0;right:0;z-index:50;background:rgba(255,255,255,.96);border-top:1px solid var(--line);backdrop-filter:blur(14px);padding:8px 12px calc(8px + env(safe-area-inset-bottom))}.nav{max-width:800px;margin:auto;display:grid;grid-template-columns:repeat(5,1fr);gap:5px}.nav button{border:0;border-radius:10px;background:transparent;color:#667085;padding:8px 2px;font-size:11px}.nav button.active{color:#111827;background:#f2f4f7}
-.drawer{position:fixed;inset:0;z-index:100;background:rgba(15,23,42,.4);display:none;align-items:flex-end}.drawer.open{display:flex}.sheet{background:#fff;width:100%;max-height:88vh;overflow:auto;border-radius:24px 24px 0 0;padding:18px 14px calc(18px + env(safe-area-inset-bottom))}.sheetHandle{width:42px;height:5px;border-radius:99px;background:#d0d5dd;margin:0 auto 14px}
-.timeline{border-right:2px solid #e5e7eb;margin-right:8px;padding-right:14px}.event{position:relative;padding:0 0 16px}.event:before{content:'';position:absolute;right:-20px;top:4px;width:10px;height:10px;border-radius:50%;background:#475467;border:3px solid #fff}.event strong{font-size:13px}.event div{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.6}
-.attach{display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:13px;margin-top:8px}.attachInfo{flex:1;min-width:0}.attachInfo b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.attachInfo span{font-size:11px;color:var(--muted)}.mini{border:0;border-radius:9px;padding:7px 9px;font-size:11px;font-weight:700}.storageBar{height:9px;background:#eaecf0;border-radius:99px;overflow:hidden;margin-top:8px}.storageBar i{display:block;height:100%;background:#475467;width:0}.toast{position:fixed;left:50%;bottom:105px;transform:translateX(-50%);z-index:200;background:#111827;color:#fff;padding:10px 14px;border-radius:12px;font-size:13px;display:none;max-width:90%;text-align:center}
-.hidden{display:none!important}.small{font-size:12px;color:var(--muted);line-height:1.7}.sectionTitle{font-weight:800;margin-bottom:8px}.pillrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.warning{background:#fffaeb;border:1px solid #fedf89;color:#93370d;padding:11px 12px;border-radius:13px;font-size:12px;line-height:1.7}
+:root{--bg:#f5f7fb;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--danger:#b91c1c;--ok:#166534;--blue:#1d4ed8}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Tahoma,Arial,sans-serif}
+body{min-height:100vh}
+.app{max-width:760px;margin:auto;padding:calc(16px + env(safe-area-inset-top)) 14px calc(96px + env(safe-area-inset-bottom))}
+h1{font-size:30px;margin:4px 0}.sub{color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.card,.stat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.stat b{display:block;font-size:28px;margin-top:5px}.card{margin:12px 0}
+label{display:block;color:var(--muted);font-size:13px;margin:11px 2px 6px}
+input,select,textarea,button{font:inherit}
+input,select,textarea{width:100%;padding:13px;border:1px solid var(--line);border-radius:12px;background:#fff}
+textarea{min-height:90px;resize:vertical}
+button{border:0;border-radius:12px;padding:12px 14px;background:#111827;color:#fff;font-weight:700}
+.secondary{background:#eef2f7;color:#111827}
+.scanbtn{width:100%;padding:15px;border-radius:15px;background:#111827;color:white;font-size:16px;margin-top:10px}
+.actions{display:flex;gap:8px;margin-top:14px}.actions button{flex:1}
+.item{padding:13px 0;border-bottom:1px solid var(--line)}.item:last-child{border-bottom:0}
+.top{display:flex;justify-content:space-between;gap:8px}.num{font-weight:800}.meta{font-size:13px;color:var(--muted);margin-top:5px}
+.tag{font-size:12px;padding:5px 8px;border-radius:99px;background:#eef2f7;white-space:nowrap}
+.tag.late{background:#fee2e2;color:var(--danger)}.tag.done{background:#dcfce7;color:var(--ok)}.tag.ocr{background:#dbeafe;color:#1e40af}
+.ocrtext{display:none;margin-top:10px;padding:10px;background:#f8fafc;border:1px solid var(--line);border-radius:10px;font-size:12px;line-height:1.8;white-space:pre-wrap;max-height:220px;overflow:auto}
+.smallbtn{margin-top:8px;background:#eef2f7;color:#111827;padding:7px 10px;font-size:12px}.deletebtn{margin-top:8px;background:#fee2e2;color:#b91c1c;padding:7px 10px;font-size:12px}.editbtn{margin-top:8px;background:#dbeafe;color:#1d4ed8;padding:7px 10px;font-size:12px}
+nav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);border-top:1px solid var(--line);backdrop-filter:blur(12px);padding:8px 12px calc(8px + env(safe-area-inset-bottom));z-index:20}
+.nav{max-width:760px;margin:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.nav button{background:transparent;color:#6b7280;padding:8px 2px;font-size:12px}
+.nav button.active{background:#f3f4f6;color:#111827}.screen{display:none}.screen.active{display:block}.empty{text-align:center;color:var(--muted);padding:28px 8px}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.progress{display:none;background:#fff;border:1px solid var(--line);border-radius:18px;padding:15px;margin:12px 0}
+.bar{height:8px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-top:10px}.bar i{display:block;height:100%;width:0;background:#111827;transition:width .25s}
+.note{font-size:12px;color:var(--muted);line-height:1.7}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:100px;background:#111827;color:#fff;padding:10px 14px;border-radius:12px;font-size:13px;display:none;z-index:50;max-width:90%;text-align:center}
 
-.ocrbox{display:none;background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
-.ocrbar{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-top:10px}
-.ocrbar i{display:block;height:100%;width:0;background:#111827;transition:width .2s}
+.scanner{position:fixed;inset:0;background:#000;z-index:100;display:none;flex-direction:column}
+.scanner.active{display:flex}
+.scanner video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.scanOverlay{position:absolute;inset:0;pointer-events:none}
+.scanFrame{position:absolute;left:7%;right:7%;top:15%;bottom:17%;border:3px solid rgba(255,255,255,.9);border-radius:18px;box-shadow:0 0 0 9999px rgba(0,0,0,.28)}
+.scanStatus{position:absolute;top:calc(24px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:rgba(0,0,0,.66);color:white;padding:10px 14px;border-radius:14px;font-size:14px;text-align:center;min-width:220px}
+.scanBottom{position:absolute;left:0;right:0;bottom:calc(20px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:10px;padding:0 16px}
+.scanBottom button{background:rgba(255,255,255,.92);color:#111827;min-width:120px}
+.scanBottom .danger{background:rgba(153,27,27,.92);color:white}
+#scanCanvas,#workCanvas{display:none}
 
-
-.ocrerror{display:none;margin-top:10px;padding:10px 12px;border-radius:12px;background:#fef3f2;color:#b42318;border:1px solid #fecdca;font-size:12px;line-height:1.7}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js?v=15"></script>
 </head>
 <body>
 <div class="app">
+
 <section id="home" class="screen active">
-  <h1>معاملاتي</h1>
-  <div class="sub">نسخة Local v15 — إصلاح OCR وإمكانية إعادة قراءة المستند من داخل المعاملة</div>
-  <div class="privacy">🔒 لا يتم رفع بيانات المعاملات أو المرفقات إلى GitHub أو قاعدة بيانات خارجية.</div>
-  <button class="btn full scan" onclick="scanInput.click()">📷 مسح مستند وقراءة بياناته تلقائيًا</button>
-  <input id="scanInput" class="hidden" type="file" accept="image/*,application/pdf" capture="environment" onchange="quickScan(event)">
-  <div id="ocrBox" class="ocrbox">
-    <strong id="ocrTitle">جارٍ قراءة المستند…</strong>
-    <div class="ocrbar"><i id="ocrFill"></i></div>
-    <div id="ocrMsg" class="small" style="margin-top:8px">يتم تحليل النص داخل المتصفح.</div><div id="ocrError" class="ocrerror"></div>
-  </div>
-  <div class="grid">
-    <div class="stat">إجمالي المعاملات<b id="countAll">0</b></div>
-    <div class="stat">تحت الإجراء<b id="countOpen">0</b></div>
-    <div class="stat">المتأخر<b id="countLate">0</b></div>
-    <div class="stat">المكتمل<b id="countDone">0</b></div>
-  </div>
-  <div class="card"><div class="row"><strong>آخر المعاملات</strong><button class="btn secondary" onclick="startNew()">+ إضافة</button></div><div id="recent"></div></div>
+<h1>معاملاتي</h1>
+<div class="sub">تصوير المستند ثم قصّه وتحسينه كمسح ضوئي وحفظه تلقائيًا</div>
+
+<button class="scanbtn" onclick="startAutoScanner()">📷 مسح ضوئي حقيقي</button>
+<button class="secondary" style="width:100%;margin-top:8px" onclick="scanInput.click()">تصوير مستند وتحويله لمسح</button>
+<input id="scanInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="scanDocumentAsTrueScan(event)">
+
+<div id="scanProgress" class="progress">
+  <strong id="scanTitle">جارٍ قراءة المستند…</strong>
+  <div class="bar"><i id="scanBar"></i></div>
+  <div id="scanMsg" class="note" style="margin-top:8px">لا تغلق الصفحة حتى يكتمل الحفظ.</div><img id="scanPreview" alt="معاينة المسح" style="display:none;width:100%;margin-top:12px;border-radius:12px;border:1px solid var(--line)">
+</div>
+
+<div class="grid">
+<div class="stat">إجمالي المعاملات<b id="all">0</b></div>
+<div class="stat">تحت الإجراء<b id="open">0</b></div>
+<div class="stat">المتأخر<b id="late">0</b></div>
+<div class="stat">المكتمل<b id="done">0</b></div>
+</div>
+
+<div class="card">
+  <div class="row"><strong>آخر المعاملات</strong><button class="secondary" onclick="finishEdit();go('new')">+ إضافة يدويًا</button></div>
+  <div id="recent"></div>
+</div>
 </section>
 
 <section id="new" class="screen">
-  <h1 id="formTitle">معاملة جديدة</h1><div id="formSub" class="sub">حفظ محلي داخل الآيفون</div>
-  <div class="card">
-    <label>رقم المعاملة</label><input id="fNumber" placeholder="مثال: 2026-001">
-    <div class="two"><div><label>النوع</label><select id="fType"><option>وارد</option><option>صادر</option><option>داخلي</option></select></div><div><label>الحالة</label><select id="fStatus"><option>جديدة</option><option>محولة</option><option>تحت الإجراء</option><option>بانتظار رد</option><option>مكتملة</option><option>مغلقة</option></select></div></div>
-    <label>الجهة</label><input id="fEntity" placeholder="اسم الجهة">
-    <label>الموضوع</label><textarea id="fSubject" placeholder="موضوع المعاملة"></textarea>
-    <label>المسؤول الحالي</label><input id="fOwner" placeholder="الموظف أو القسم">
-    <label>تاريخ الاستحقاق</label><input id="fDue" type="date">
-    <label>ملاحظات</label><textarea id="fNotes" placeholder="ملاحظات"></textarea>
-    <div class="actions"><button class="btn" onclick="saveForm()" id="formSave">حفظ</button><button class="btn secondary" onclick="cancelForm()">إلغاء</button></div>
-  </div>
+<h1 id="formTitle">معاملة جديدة</h1><div id="formSub" class="sub">إدخال يدوي عند الحاجة</div>
+<div class="card">
+<label>رقم المعاملة</label><input id="n" placeholder="مثال: 2026-001">
+<label>النوع</label><select id="t"><option>وارد</option><option>صادر</option><option>داخلي</option></select>
+<label>الجهة</label><input id="e" placeholder="اسم الجهة">
+<label>الموضوع</label><textarea id="s" placeholder="موضوع المعاملة"></textarea>
+<label>المسؤول</label><input id="o" placeholder="اسم الموظف أو القسم">
+<label>تاريخ الاستحقاق</label><input id="d" type="date">
+<label>الحالة</label><select id="st"><option>جديدة</option><option>تحت الإجراء</option><option>بانتظار رد</option><option>مكتملة</option><option>مغلقة</option></select>
+<label>ملاحظات</label><textarea id="no" placeholder="ملاحظات"></textarea>
+<div class="actions"><button id="saveBtn" onclick="save()">حفظ</button><button id="cancelEditBtn" class="secondary" onclick="cancelEdit()">مسح</button></div>
+</div>
 </section>
 
 <section id="search" class="screen">
-  <h1>البحث</h1><div class="sub">رقم المعاملة، الجهة، الموضوع، الموظف، الملاحظات والنصوص المقروءة سابقًا</div>
-  <div class="card"><input id="searchInput" placeholder="اكتب كلمة البحث…" oninput="renderSearch()"><div id="searchResults"></div></div>
-</section>
-
-<section id="archive" class="screen">
-  <h1>الأرشيف</h1><div class="sub">جميع المعاملات المحفوظة على الجهاز</div>
-  <div class="card"><div class="two"><select id="filterStatus" onchange="renderArchive()"><option value="">كل الحالات</option><option>جديدة</option><option>محولة</option><option>تحت الإجراء</option><option>بانتظار رد</option><option>مكتملة</option><option>مغلقة</option></select><select id="filterType" onchange="renderArchive()"><option value="">كل الأنواع</option><option>وارد</option><option>صادر</option><option>داخلي</option></select></div><div id="archiveList"></div></div>
+<h1>البحث</h1>
+<div class="sub">يبحث داخل بيانات المعاملة والنص المقروء من المستند</div>
+<div class="card">
+<input id="q" oninput="renderSearch()" placeholder="ابحث برقم، اسم، جهة أو أي كلمة داخل الخطاب…">
+<div id="results"></div>
+</div>
 </section>
 
 <section id="settings" class="screen">
-  <h1>الإعدادات</h1>
-  <div class="card"><div class="sectionTitle">الخصوصية والتخزين</div><div class="small">كل بيانات المعاملات والمرفقات في IndexedDB على هذا الجهاز. GitHub يستضيف ملفات التطبيق فقط.</div><div id="storageText" class="small" style="margin-top:8px">جارٍ حساب مساحة التخزين…</div><div class="storageBar"><i id="storageFill"></i></div><button class="btn secondary full" style="margin-top:10px" onclick="requestPersistence()">طلب حماية التخزين المحلي</button></div>
-  <div class="card"><div class="sectionTitle">النسخة الاحتياطية</div><div class="warning">مهم: التخزين المحلي قد يتأثر إذا حُذفت بيانات Safari أو حُذف التطبيق. صدّر نسخة احتياطية بشكل دوري واحفظها في «على الـ iPhone» أو موقع معتمد لديك.</div><div class="actions"><button class="btn success" onclick="exportBackup()">تصدير نسخة</button><button class="btn blue" onclick="backupInput.click()">استعادة نسخة</button></div><input class="hidden" id="backupInput" type="file" accept="application/json,.json" onchange="importBackup(event)"></div>
-  <div class="card"><div class="sectionTitle">ترحيل النسخة القديمة</div><div id="migrationText" class="small">يتم التحقق من بيانات النسخة السابقة تلقائيًا.</div><button class="btn secondary full" style="margin-top:8px" onclick="migrateLegacy(true)">إعادة فحص البيانات القديمة</button></div>
-  <div class="card"><div class="sectionTitle">إصدار التطبيق</div><div class="small">معاملاتي Local v15 • OCR قابل لإعادة المحاولة • IndexedDB • مرفقات • تحويل • سجل إجراءات</div></div>
+<h1>الإعدادات</h1>
+<div class="card">
+<strong>OCR + مسح ضوئي — إصدار 9</strong>
+<p class="note">عند تصوير المستند، يحاول البرنامج اكتشاف حدود الورقة وقصّها وتصحيح المنظور وتحويلها إلى أبيض وأسود كمسح ضوئي، ثم يقرأ النص ويحفظه تلقائيًا بدون اعتماد.</p>
+<button class="secondary" onclick="demo()">إضافة بيانات تجريبية</button>
+<button style="margin-top:8px;background:#991b1b" onclick="wipe()">حذف جميع البيانات</button>
+</div>
 </section>
+
 </div>
 
-<div id="drawer" class="drawer" onclick="drawerBackdrop(event)"><div class="sheet" id="detailSheet"><div class="sheetHandle"></div><div id="detailContent"></div></div></div>
+
+<div id="scanner" class="scanner">
+  <video id="scanVideo" autoplay playsinline muted></video>
+  <canvas id="scanCanvas"></canvas>
+  <canvas id="workCanvas"></canvas>
+  <div class="scanOverlay">
+    <div class="scanFrame"></div>
+    <div id="autoScanStatus" class="scanStatus">وجّه الكاميرا نحو المستند</div>
+    <div class="scanBottom">
+      <button id="manualCaptureBtn" onclick="manualCapture()" style="font-size:18px;padding:15px 20px">التقاط الآن</button>
+      <button class="danger" onclick="stopAutoScanner()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast"></div>
 
 <nav><div class="nav">
-<button data-s="home" class="active" onclick="go('home')">الرئيسية</button>
-<button data-s="new" onclick="startNew()">إضافة</button>
-<button data-s="search" onclick="go('search')">بحث</button>
-<button data-s="archive" onclick="go('archive')">الأرشيف</button>
-<button data-s="settings" onclick="go('settings')">إعدادات</button>
+<button class="active" data-x="home" onclick="go('home')">الرئيسية</button>
+<button data-x="new" onclick="finishEdit();go('new')">إضافة</button>
+<button data-x="search" onclick="go('search')">بحث</button>
+<button data-x="settings" onclick="go('settings')">إعدادات</button>
 </div></nav>
 
 <script>
-const DB_NAME='MoamalatiLocalDB';
-const DB_VERSION=1;
-const STORES={tx:'transactions',att:'attachments',act:'actions',meta:'meta'};
-let db=null, editingId=null, currentDetailId=null;
+const K='moamalati_ocr_v3';
+let editingId=null;
+const gd=()=>JSON.parse(localStorage.getItem(K)||'[]');
+const sd=x=>localStorage.setItem(K,JSON.stringify(x));
+const esc=x=>String(x||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-function uid(){return (crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2))}
-function nowISO(){return new Date().toISOString()}
-function fmtDateTime(s){if(!s)return'';try{return new Intl.DateTimeFormat('ar-SA',{dateStyle:'medium',timeStyle:'short'}).format(new Date(s))}catch{return s}}
-function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-function showToast(msg){toast.textContent=msg;toast.style.display='block';clearTimeout(showToast.t);showToast.t=setTimeout(()=>toast.style.display='none',3200)}
-
-function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains(STORES.tx))d.createObjectStore(STORES.tx,{keyPath:'id'});if(!d.objectStoreNames.contains(STORES.att)){const s=d.createObjectStore(STORES.att,{keyPath:'id'});s.createIndex('transactionId','transactionId',{unique:false})}if(!d.objectStoreNames.contains(STORES.act)){const s=d.createObjectStore(STORES.act,{keyPath:'id'});s.createIndex('transactionId','transactionId',{unique:false})}if(!d.objectStoreNames.contains(STORES.meta))d.createObjectStore(STORES.meta,{keyPath:'key'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
-function store(name,mode='readonly'){return db.transaction(name,mode).objectStore(name)}
-function getAll(name){return new Promise((resolve,reject)=>{const r=store(name).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})}
-function getOne(name,key){return new Promise((resolve,reject)=>{const r=store(name).get(key);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
-function putOne(name,value){return new Promise((resolve,reject)=>{const r=store(name,'readwrite').put(value);r.onsuccess=()=>resolve(value);r.onerror=()=>reject(r.error)})}
-function delOne(name,key){return new Promise((resolve,reject)=>{const r=store(name,'readwrite').delete(key);r.onsuccess=()=>resolve();r.onerror=()=>reject(r.error)})}
-function byTx(name,txid){return new Promise((resolve,reject)=>{const idx=store(name).index('transactionId');const r=idx.getAll(txid);r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})}
-
-async function logAction(txid,type,description,extra={}){await putOne(STORES.act,{id:uid(),transactionId:txid,type,description,timestamp:nowISO(),...extra})}
-function isLate(x){if(!x.dueDate||['مكتملة','مغلقة'].includes(x.status))return false;const t=new Date();t.setHours(0,0,0,0);return new Date(x.dueDate+'T00:00:00')<t}
-function itemHTML(x){const late=isLate(x),done=['مكتملة','مغلقة'].includes(x.status);return `<div class="item" onclick="openDetail('${x.id}')"><div class="row"><div style="min-width:0"><div class="num">${esc(x.number||'بدون رقم')}</div><div style="margin-top:5px">${esc(x.subject||'بدون موضوع')}</div></div><span class="tag ${late?'late':done?'done':''}">${late?'متأخرة':esc(x.status||'جديدة')}</span></div><div class="meta">${esc(x.type||'')} • ${esc(x.entity||'')} • ${esc(x.owner||x.currentAssignee||'غير محدد')}</div><div class="pillrow"><span class="tag local">محلي</span>${x.currentDepartment?`<span class="tag">${esc(x.currentDepartment)}</span>`:''}</div></div>`}
-
-function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.s===id));window.scrollTo(0,0);if(id==='home')renderHome();if(id==='search')renderSearch();if(id==='archive')renderArchive();if(id==='settings')updateStorage()}
-async function renderHome(){const a=(await getAll(STORES.tx)).sort((x,y)=>(y.updatedAt||'').localeCompare(x.updatedAt||''));countAll.textContent=a.length;countOpen.textContent=a.filter(x=>!['مكتملة','مغلقة'].includes(x.status)).length;countLate.textContent=a.filter(isLate).length;countDone.textContent=a.filter(x=>['مكتملة','مغلقة'].includes(x.status)).length;recent.innerHTML=a.length?a.slice(0,8).map(itemHTML).join(''):'<div class="empty">لا توجد معاملات حتى الآن</div>'}
-async function renderSearch(){const q=(searchInput.value||'').trim().toLowerCase();let a=await getAll(STORES.tx);a.sort((x,y)=>(y.updatedAt||'').localeCompare(x.updatedAt||''));if(q)a=a.filter(x=>[x.number,x.type,x.entity,x.subject,x.owner,x.status,x.notes,x.ocrText,x.currentDepartment,x.currentAssignee].join(' ').toLowerCase().includes(q));searchResults.innerHTML=a.length?a.map(itemHTML).join(''):'<div class="empty">لا توجد نتائج</div>'}
-async function renderArchive(){let a=await getAll(STORES.tx);a.sort((x,y)=>(y.updatedAt||'').localeCompare(x.updatedAt||''));if(filterStatus.value)a=a.filter(x=>x.status===filterStatus.value);if(filterType.value)a=a.filter(x=>x.type===filterType.value);archiveList.innerHTML=a.length?a.map(itemHTML).join(''):'<div class="empty">لا توجد معاملات</div>'}
-
-function clearForm(){fNumber.value='';fType.value='وارد';fEntity.value='';fSubject.value='';fOwner.value='';fDue.value='';fStatus.value='جديدة';fNotes.value=''}
-function startNew(){editingId=null;clearForm();formTitle.textContent='معاملة جديدة';formSub.textContent='حفظ محلي داخل الآيفون';formSave.textContent='حفظ';go('new')}
-async function startEdit(id){const x=await getOne(STORES.tx,id);if(!x)return;editingId=id;fNumber.value=x.number||'';fType.value=x.type||'وارد';fEntity.value=x.entity||'';fSubject.value=x.subject||'';fOwner.value=x.owner||'';fDue.value=x.dueDate||'';fStatus.value=x.status||'جديدة';fNotes.value=x.notes||'';formTitle.textContent='تعديل المعاملة';formSub.textContent='عدّل البيانات ثم احفظ';formSave.textContent='حفظ التعديلات';closeDrawer();go('new')}
-function cancelForm(){startNew();go('home')}
-async function saveForm(){if(!fNumber.value.trim()||!fSubject.value.trim()){alert('رقم المعاملة والموضوع مطلوبان');return}const old=editingId?await getOne(STORES.tx,editingId):null;const x={...(old||{}),id:editingId||uid(),number:fNumber.value.trim(),type:fType.value,entity:fEntity.value.trim(),subject:fSubject.value.trim(),owner:fOwner.value.trim(),dueDate:fDue.value,status:fStatus.value,notes:fNotes.value.trim(),createdAt:old?.createdAt||nowISO(),updatedAt:nowISO(),ocrText:old?.ocrText||'',currentDepartment:old?.currentDepartment||'',currentAssignee:old?.currentAssignee||''};await putOne(STORES.tx,x);await logAction(x.id,editingId?'edit':'create',editingId?'تم تعديل بيانات المعاملة':'تم إنشاء المعاملة');editingId=null;clearForm();go('home');showToast('✅ تم الحفظ محليًا')}
-
-
-function arDigitsToEn(s){
-  const m={'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9'};
-  return String(s||'').replace(/[٠-٩]/g,d=>m[d]);
+function go(x){
+  document.querySelectorAll('.screen').forEach(a=>a.classList.remove('active'));
+  document.getElementById(x).classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.x===x));
+  if(x==='home')render();
+  if(x==='search')renderSearch();
+  scrollTo(0,0);
 }
-function cleanOCRLine(s){return String(s||'').replace(/\s+/g,' ').trim()}
-function extractOCRFields(text){
-  const raw=String(text||'').replace(/\r/g,'');
-  const lines=raw.split('\n').map(cleanOCRLine).filter(Boolean);
-  const norm=arDigitsToEn(raw);
 
-  let number='';
-  let m=norm.match(/(?:رقم\s*(?:المعاملة|الخطاب|الصادر|الوارد)?|المرجع)\s*[:\-]?\s*([A-Za-z0-9\/\-]{2,})/i);
-  if(m) number=m[1];
-  if(!number){
-    m=norm.match(/\b([0-9]{3,}(?:[\/\-][0-9A-Za-z]{1,10})*)\b/);
-    if(m) number=m[1];
+function isLate(x){
+  if(!x.d||['مكتملة','مغلقة'].includes(x.st))return false;
+  let z=new Date();z.setHours(0,0,0,0);
+  return new Date(x.d+'T00:00:00')<z;
+}
+
+function card(x){
+  let l=isLate(x),dn=['مكتملة','مغلقة'].includes(x.st),cls=dn?'done':l?'late':'',tag=l?'متأخرة':x.st;
+  let ocr = x.ocr ? `<span class="tag ocr">OCR</span>` : '';
+  let view = `<div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${x.ocr ? `<button class="smallbtn" onclick="toggleOCR('${x.id}')">عرض النص المقروء</button>` : ''}
+      <button class="editbtn" onclick="editTx('${x.id}')">تعديل المعاملة</button>
+      <button class="deletebtn" onclick="deleteTx('${x.id}')">حذف المعاملة</button>
+    </div>
+    ${x.ocr ? `<div class="ocrtext" id="ocr-${x.id}">${esc(x.ocr)}</div>` : ''}`;
+  return `<div class=item>
+    <div class=top>
+      <div><div class=num>${esc(x.n||'بدون رقم')}</div><div style="margin-top:5px">${esc(x.s||'بدون موضوع')}</div></div>
+      <div style="display:flex;gap:5px;align-items:flex-start">${ocr}<span class="tag ${cls}">${esc(tag)}</span></div>
+    </div>
+    <div class=meta>${esc(x.t)} • ${esc(x.e)} • ${esc(x.o)}</div>
+    ${view}
+  </div>`;
+}
+
+function toggleOCR(id){
+  const el=document.getElementById('ocr-'+id);
+  if(el) el.style.display = el.style.display==='block' ? 'none' : 'block';
+}
+
+function render(){
+  let a=gd();
+  all.textContent=a.length;
+  open.textContent=a.filter(x=>!['مكتملة','مغلقة'].includes(x.st)).length;
+  late.textContent=a.filter(isLate).length;
+  done.textContent=a.filter(x=>['مكتملة','مغلقة'].includes(x.st)).length;
+  recent.innerHTML=a.length?a.slice().reverse().slice(0,8).map(card).join(''):'<div class=empty>لا توجد معاملات</div>';
+}
+
+function renderSearch(){
+  let qv=(q.value||'').trim().toLowerCase(),a=gd().slice().reverse();
+  if(qv){
+    a=a.filter(x=>[x.n,x.e,x.s,x.o,x.t,x.st,x.no,x.ocr].join(' ').toLowerCase().includes(qv));
+  }
+  results.innerHTML=a.length?a.map(card).join(''):'<div class=empty>لا توجد نتائج</div>';
+}
+
+function save(){
+  if(!n.value.trim()||!s.value.trim()){
+    alert('رقم المعاملة والموضوع مطلوبان');
+    return;
+  }
+
+  let a=gd();
+
+  if(editingId){
+    const idx=a.findIndex(x=>String(x.id)===String(editingId));
+    if(idx===-1){
+      alert('تعذر العثور على المعاملة');
+      return;
+    }
+
+    const old=a[idx];
+    a[idx]={
+      ...old,
+      n:n.value.trim(),
+      t:t.value,
+      e:e.value.trim(),
+      s:s.value.trim(),
+      o:o.value.trim(),
+      d:d.value,
+      st:st.value,
+      no:no.value.trim()
+    };
+    sd(a);
+    finishEdit();
+    go('home');
+    showToast('✅ تم تعديل المعاملة');
+    return;
+  }
+
+  let x={
+    id:String(Date.now()),
+    n:n.value.trim(),
+    t:t.value,
+    e:e.value.trim(),
+    s:s.value.trim(),
+    o:o.value.trim(),
+    d:d.value,
+    st:st.value,
+    no:no.value.trim(),
+    ocr:''
+  };
+
+  a.push(x);
+  sd(a);
+  clearF();
+  go('home');
+  showToast('✅ تم حفظ المعاملة');
+}
+
+function clearF(){
+  [n,e,s,o,d,no].forEach(x=>x.value='');
+  t.selectedIndex=0;
+  st.selectedIndex=0;
+}
+
+function editTx(id){
+  const x=gd().find(v=>String(v.id)===String(id));
+  if(!x) return;
+
+  editingId=String(id);
+  n.value=x.n||'';
+  t.value=x.t||'وارد';
+  e.value=x.e||'';
+  s.value=x.s||'';
+  o.value=x.o||'';
+  d.value=x.d||'';
+  st.value=x.st||'جديدة';
+  no.value=x.no||'';
+
+  formTitle.textContent='تعديل المعاملة';
+  formSub.textContent='عدّل البيانات ثم اضغط حفظ التعديلات';
+  saveBtn.textContent='حفظ التعديلات';
+  cancelEditBtn.textContent='إلغاء';
+
+  go('new');
+}
+
+function finishEdit(){
+  editingId=null;
+  clearF();
+  formTitle.textContent='معاملة جديدة';
+  formSub.textContent='إدخال يدوي عند الحاجة';
+  saveBtn.textContent='حفظ';
+  cancelEditBtn.textContent='مسح';
+}
+
+function cancelEdit(){
+  if(editingId){
+    finishEdit();
+    go('home');
+  }else{
+    clearF();
+  }
+}
+
+function arabicDigitsToEnglish(str){
+  const map={'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9'};
+  return String(str||'').replace(/[٠-٩]/g,d=>map[d]);
+}
+
+function cleanLine(s){ return String(s||'').replace(/\s+/g,' ').trim(); }
+
+function extractData(text){
+  const raw=String(text||'').replace(/\r/g,'');
+  const lines=raw.split('\n').map(cleanLine).filter(Boolean);
+  const normalized=arabicDigitsToEnglish(raw);
+
+  let num='';
+  let m = normalized.match(/(?:رقم\s*(?:المعاملة|الخطاب)?|المرجع)\s*[:\-]?\s*([A-Za-z0-9\/\-]{3,})/i);
+  if(m) num=m[1];
+
+  if(!num){
+    m=normalized.match(/\b([0-9]{3,}(?:[\/\-][0-9A-Za-z]{1,8})*)\b/);
+    if(m) num=m[1];
   }
 
   let date='';
-  m=norm.match(/(?:التاريخ|تاريخ)\s*[:\-]?\s*([0-9]{1,4}[\/\-][0-9]{1,2}[\/\-][0-9]{1,4})/i);
+  m = normalized.match(/(?:التاريخ|تاريخ)\s*[:\-]?\s*([0-9]{1,4}[\/\-][0-9]{1,2}[\/\-][0-9]{1,4})/i);
   if(m) date=m[1];
 
   let subject='';
   for(let i=0;i<lines.length;i++){
     if(/الموضوع|موضوع/i.test(lines[i])){
-      subject=cleanOCRLine(lines[i].replace(/.*?(الموضوع|موضوع)\s*[:\-]?/i,''));
+      subject=cleanLine(lines[i].replace(/.*?(الموضوع|موضوع)\s*[:\-]?/i,''));
       if(!subject && lines[i+1]) subject=lines[i+1];
       break;
     }
   }
   if(!subject){
-    subject=lines.find(x=>x.length>=10 && x.length<=180 &&
-      !/بسم الله|السلام عليكم|التاريخ|رقم|المملكة العربية السعودية|وزارة/i.test(x)) || 'مستند ممسوح';
+    subject = lines.find(x=>x.length>12 && !/وزارة|إدارة|التاريخ|رقم|بسم الله|السلام عليكم/i.test(x)) || 'مستند ممسوح';
   }
+  subject=subject.slice(0,180);
 
   let entity='';
   for(let i=0;i<lines.length;i++){
     if(/(?:الجهة|من)\s*[:\-]/i.test(lines[i])){
-      entity=cleanOCRLine(lines[i].replace(/.*?(الجهة|من)\s*[:\-]?/i,''));
+      entity=cleanLine(lines[i].replace(/.*?(الجهة|من)\s*[:\-]?/i,''));
       if(entity) break;
     }
   }
   if(!entity){
-    entity=lines.find(x=>/وزارة|إدارة|قسم|مستشفى|مدينة|مركز|شركة|مؤسسة|جامعة|كلية/i.test(x)) || 'مستند محلي';
+    entity = lines.find(x=>/وزارة|إدارة|قسم|مستشفى|مركز|شركة|مؤسسة|جامعة/i.test(x)) || 'مستند ممسوح';
+  }
+  entity=entity.slice(0,120);
+
+  if(!num){
+    const now=new Date();
+    const pad=x=>String(x).padStart(2,'0');
+    num=`SCAN-${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   }
 
-  return {
-    number:(number||'').slice(0,80),
-    date:(date||'').slice(0,30),
-    subject:(subject||'مستند ممسوح').slice(0,200),
-    entity:(entity||'مستند محلي').slice(0,150)
-  };
-}
-function setOCRProgress(p,msg){
-  ocrBox.style.display='block';
-  ocrFill.style.width=Math.max(2,Math.round((p||0)*100))+'%';
-  if(msg) ocrMsg.textContent=msg;
+  return {num,date,subject,entity};
 }
 
+function setProgress(p,msg){
+  scanProgress.style.display='block';
+  scanBar.style.width=Math.max(3,Math.round(p*100))+'%';
+  if(msg) scanMsg.textContent=msg;
+}
 
-async function prepareImageForOCR(file){
-  const url=URL.createObjectURL(file);
-  try{
-    const img=await new Promise((resolve,reject)=>{
-      const i=new Image();
-      i.onload=()=>resolve(i);
-      i.onerror=reject;
-      i.src=url;
-    });
+function showToast(msg){
+  toast.textContent=msg; toast.style.display='block';
+  setTimeout(()=>toast.style.display='none',3500);
+}
 
-    const maxSide=1800;
-    const scale=Math.min(1,maxSide/Math.max(img.naturalWidth,img.naturalHeight));
-    const c=document.createElement('canvas');
-    c.width=Math.max(1,Math.round(img.naturalWidth*scale));
-    c.height=Math.max(1,Math.round(img.naturalHeight*scale));
-    const ctx=c.getContext('2d',{willReadFrequently:true});
-    ctx.drawImage(img,0,0,c.width,c.height);
 
-    // High-contrast grayscale improves Arabic document OCR and lowers memory usage.
-    const im=ctx.getImageData(0,0,c.width,c.height);
-    const data=im.data;
-    for(let p=0;p<data.length;p+=4){
-      let g=Math.round(data[p]*0.299+data[p+1]*0.587+data[p+2]*0.114);
-      g=Math.max(0,Math.min(255,(g-128)*1.28+128));
-      data[p]=data[p+1]=data[p+2]=g;
-    }
-    ctx.putImageData(im,0,0);
-    return c;
-  }finally{
-    URL.revokeObjectURL(url);
+let scannerStream=null;
+let detectorTimer=null;
+let stableFrames=0;
+let lastQuad=null;
+let capturing=false;
+
+async function waitForOpenCV(timeout=12000){
+  const started=Date.now();
+  while(Date.now()-started<timeout){
+    if(window.cv && cv.Mat) return true;
+    await new Promise(r=>setTimeout(r,200));
   }
+  return false;
 }
 
-async function recognizeArabicDocument(file){
-  if(typeof Tesseract==='undefined' || !Tesseract.recognize){
-    throw new Error('لم يتم تحميل محرك OCR');
-  }
-
-  const image=await prepareImageForOCR(file);
-
-  // هذا هو مسار Tesseract البسيط الذي سبق أن عمل على نفس الآيفون.
-  const result=await Tesseract.recognize(image,'ara+eng',{
-    logger:m=>{
-      if(m.status==='loading tesseract core'){
-        setOCRProgress(.08,'تحميل محرك القراءة…');
-      }else if(m.status==='loading language traineddata'){
-        setOCRProgress(.18,'تحميل بيانات اللغة العربية والإنجليزية…');
-      }else if(m.status==='initializing api'){
-        setOCRProgress(.30,'تهيئة القراءة…');
-      }else if(m.status==='recognizing text'){
-        setOCRProgress(.30+(m.progress||0)*.62,'جارٍ قراءة نص الخطاب…');
-      }
-    }
-  });
-
-  return (result?.data?.text||'').trim();
-}
-
-async function quickScan(ev){
-  const file=ev.target.files?.[0];
-  ev.target.value='';
-  if(!file)return;
-
-  const id=uid();
-  const stamp=new Date();
-  const pad=n=>String(n).padStart(2,'0');
-  const fallbackNum=`SCAN-${stamp.getFullYear()}${pad(stamp.getMonth()+1)}${pad(stamp.getDate())}-${pad(stamp.getHours())}${pad(stamp.getMinutes())}`;
-
-  let ocrText='', fields={number:'',date:'',subject:'',entity:''};
-
-  if(file.type && file.type.startsWith('image/')){
-    try{
-      ocrTitle.textContent='جارٍ قراءة المستند…';
-      setOCRProgress(.02,'تهيئة القراءة العربية والإنجليزية…');
-
-      ocrError.style.display='none';
-      ocrError.textContent='';
-
-      ocrText=await recognizeArabicDocument(file);
-
-      if(!ocrText || ocrText.replace(/\s+/g,'').length<6){
-        throw new Error('لم يتم العثور على نص واضح في الصورة');
-      }
-
-      fields=extractOCRFields(ocrText);
-      setOCRProgress(.94,'تمت القراءة، جارٍ إدراج البيانات والحفظ…');
-    }catch(err){
-      console.error(err);
-      const reason=(err && err.message)?err.message:String(err||'خطأ غير معروف');
-      ocrMsg.textContent='تعذرت القراءة الآلية. سيتم حفظ المستند، ويمكن إعادة القراءة لاحقًا.';
-      ocrError.textContent='سبب تعذر OCR: '+reason;
-      ocrError.style.display='block';
-    }
-  }
-
-  const tx={
-    id,
-    number:fields.number||fallbackNum,
-    type:'وارد',
-    entity:fields.entity||'مستند محلي',
-    subject:fields.subject||(file.type==='application/pdf'?'مستند PDF محفوظ محليًا':'مستند مصور محفوظ محليًا'),
-    owner:'',
-    dueDate:'',
-    status:'جديدة',
-    notes:fields.date?`تاريخ مقروء من المستند: ${fields.date}`:(ocrText?'':'OCR: تعذرت القراءة الآلية'),
-    ocrText,
-    createdAt:nowISO(),
-    updatedAt:nowISO(),
-    currentDepartment:'',
-    currentAssignee:''
-  };
-
-  await putOne(STORES.tx,tx);
-  await saveAttachment(id,file);
-  await logAction(id,'create',ocrText?'تم إنشاء المعاملة وقراءة المستند تلقائيًا':'تم إنشاء معاملة من مستند محلي');
-  await logAction(id,'attachment',`تم حفظ المرفق محليًا: ${file.name||'مستند'}`);
-
-  if(ocrText){
-    await logAction(id,'ocr','تم استخراج النص والبيانات تلقائيًا من المستند');
-    setOCRProgress(1,'تمت القراءة والحفظ بنجاح.');
-    setTimeout(()=>{ocrBox.style.display='none';ocrFill.style.width='0'},1600);
-    showToast('✅ تم قراءة المستند وإدراج البيانات');
-  }else{
-    ocrBox.style.display='none';
-    showToast('✅ تم حفظ المستند داخل الجهاز');
-  }
-
-  await renderHome();
-  openDetail(id);
-}
-async function saveAttachment(txid,file){const rec={id:uid(),transactionId:txid,name:file.name||`مستند-${Date.now()}`,type:file.type||'application/octet-stream',size:file.size||0,blob:file,createdAt:nowISO()};await putOne(STORES.att,rec);return rec}
-async function addAttachment(ev,txid){const file=ev.target.files?.[0];ev.target.value='';if(!file)return;await saveAttachment(txid,file);const tx=await getOne(STORES.tx,txid);if(tx){tx.updatedAt=nowISO();await putOne(STORES.tx,tx)}await logAction(txid,'attachment',`تمت إضافة مرفق محلي: ${file.name||'مستند'}`);showToast('تم حفظ المرفق محليًا');openDetail(txid)}
-
-async function openAttachment(id){const a=await getOne(STORES.att,id);if(!a?.blob)return;const url=URL.createObjectURL(a.blob);window.open(url,'_blank');setTimeout(()=>URL.revokeObjectURL(url),60000)}
-async function deleteAttachment(id,txid){if(!confirm('حذف هذا المرفق؟'))return;const a=await getOne(STORES.att,id);await delOne(STORES.att,id);await logAction(txid,'attachment_delete',`تم حذف المرفق: ${a?.name||''}`);openDetail(txid)}
-
-async function retryOCR(txid){
-  const atts=await byTx(STORES.att,txid);
-  const imgAtt=atts.find(a=>a.blob && String(a.type||'').startsWith('image/'));
-  if(!imgAtt){
-    alert('لا توجد صورة مستند داخل هذه المعاملة لإعادة قراءتها.');
+async function startAutoScanner(){
+  if(capturing) return;
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    alert('المتصفح لا يدعم الكاميرا المباشرة. استخدم تصوير مستند وتحويله لمسح.');
     return;
   }
 
-  closeDrawer();
-  ocrBox.style.display='block';
-  ocrTitle.textContent='جارٍ إعادة قراءة المستند…';
-  ocrError.style.display='none';
-  setOCRProgress(.02,'تهيئة OCR…');
+  scanner.classList.add('active');
+  autoScanStatus.textContent='جاري تشغيل الكاميرا…';
 
   try{
-    const text=await recognizeArabicDocument(imgAtt.blob);
-    if(!text || text.replace(/\s+/g,'').length<6) throw new Error('لم يتم العثور على نص واضح');
+    scannerStream=await navigator.mediaDevices.getUserMedia({
+      video:{
+        facingMode:{ideal:'environment'},
+        width:{ideal:1920},
+        height:{ideal:1080}
+      },
+      audio:false
+    });
+    scanVideo.srcObject=scannerStream;
+    await scanVideo.play();
 
-    const fields=extractOCRFields(text);
-    const tx=await getOne(STORES.tx,txid);
-    if(!tx) throw new Error('المعاملة غير موجودة');
+    const ready=await waitForOpenCV();
+    if(!ready){
+      autoScanStatus.textContent='تعذر تحميل محرك المسح التلقائي. استخدم التقاط الآن.';
+      return;
+    }
 
-    if(fields.number) tx.number=fields.number;
-    if(fields.entity && fields.entity!=='مستند محلي') tx.entity=fields.entity;
-    if(fields.subject && fields.subject!=='مستند ممسوح') tx.subject=fields.subject;
-    tx.ocrText=text;
-    tx.notes=(fields.date?`تاريخ مقروء من المستند: ${fields.date}`:'') || (tx.notes||'');
-    tx.updatedAt=nowISO();
-    await putOne(STORES.tx,tx);
-    await logAction(txid,'ocr','تمت إعادة قراءة المستند وتحديث البيانات تلقائيًا');
-
-    setOCRProgress(1,'تمت القراءة وتحديث المعاملة.');
-    showToast('✅ تم تحديث بيانات المعاملة من المستند');
-    setTimeout(()=>{ocrBox.style.display='none';ocrFill.style.width='0';openDetail(txid);renderHome()},1300);
+    autoScanStatus.textContent='وجّه المستند داخل الإطار وثبّت الجوال';
+    stableFrames=0;
+    lastQuad=null;
+    detectorTimer=setInterval(detectDocumentFrame,450);
   }catch(err){
     console.error(err);
-    const reason=(err&&err.message)?err.message:String(err||'خطأ غير معروف');
-    ocrMsg.textContent='تعذرت إعادة القراءة.';
-    ocrError.textContent='سبب التعذر: '+reason;
-    ocrError.style.display='block';
-    showToast('تعذرت إعادة قراءة المستند');
+    stopAutoScanner();
+    alert('تعذر فتح الكاميرا. تأكد من السماح للموقع باستخدام الكاميرا.');
   }
 }
 
-async function openDetail(id){currentDetailId=id;const x=await getOne(STORES.tx,id);if(!x)return;const atts=(await byTx(STORES.att,id)).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));const acts=(await byTx(STORES.act,id)).sort((a,b)=>b.timestamp.localeCompare(a.timestamp));detailContent.innerHTML=`
-<div class="row"><div><h2 style="margin:0">${esc(x.number||'معاملة')}</h2><div class="sub">${esc(x.subject||'')}</div></div><button class="mini secondary" onclick="closeDrawer()">إغلاق</button></div>
-<div class="pillrow"><span class="tag">${esc(x.type)}</span><span class="tag ${isLate(x)?'late':''}">${isLate(x)?'متأخرة':esc(x.status)}</span><span class="tag local">محلي فقط</span></div>
-<div class="card"><div class="sectionTitle">بيانات المعاملة</div><div class="small"><b>الجهة:</b> ${esc(x.entity||'-')}<br><b>المسؤول:</b> ${esc(x.owner||'-')}<br><b>القسم الحالي:</b> ${esc(x.currentDepartment||'-')}<br><b>المحال إليه:</b> ${esc(x.currentAssignee||'-')}<br><b>الاستحقاق:</b> ${esc(x.dueDate||'-')}<br><b>الملاحظات:</b> ${esc(x.notes||'-')}</div><div class="actions"><button class="btn blue" onclick="startEdit('${id}')">تعديل</button><button class="btn secondary" onclick="retryOCR('${id}')">إعادة قراءة المستند</button><button class="btn danger" onclick="deleteTransaction('${id}')">حذف</button></div></div>
-<div class="card"><div class="row"><div class="sectionTitle">المستندات والمرفقات</div><button class="mini blue" onclick="document.getElementById('att-${id}').click()">+ إضافة</button></div><input id="att-${id}" class="hidden" type="file" accept="image/*,application/pdf,.doc,.docx" onchange="addAttachment(event,'${id}')">${atts.length?atts.map(a=>`<div class="attach"><div class="attachInfo"><b>${esc(a.name)}</b><span>${formatBytes(a.size)} • ${esc(a.type)}</span></div><button class="mini blue" onclick="openAttachment('${a.id}')">فتح</button><button class="mini danger" onclick="deleteAttachment('${a.id}','${id}')">حذف</button></div>`).join(''):'<div class="empty">لا توجد مرفقات</div>'}</div>
-<div class="card"><div class="sectionTitle">تحويل المعاملة</div><label>القسم</label><input id="trDept" value="${esc(x.currentDepartment||'')}" placeholder="مثال: قسم الجراحة"><label>الموظف / المسؤول</label><input id="trPerson" value="${esc(x.currentAssignee||'')}" placeholder="اسم الموظف"><label>ملاحظة التحويل</label><textarea id="trNote" placeholder="ملاحظة اختيارية"></textarea><button class="btn full" onclick="transferTransaction('${id}')">تحويل وتسجيل الإجراء</button></div>
-<div class="card"><div class="sectionTitle">سجل الإجراءات</div><div class="timeline">${acts.length?acts.map(a=>`<div class="event"><strong>${esc(a.description)}</strong><div>${fmtDateTime(a.timestamp)}</div></div>`).join(''):'<div class="small">لا توجد إجراءات مسجلة.</div>'}</div></div>
-${x.ocrText?`<div class="card"><div class="sectionTitle">النص المقروء سابقًا</div><div class="small" style="white-space:pre-wrap">${esc(x.ocrText)}</div></div>`:''}`;
-drawer.classList.add('open')}
-function closeDrawer(){drawer.classList.remove('open');currentDetailId=null}function drawerBackdrop(e){if(e.target===drawer)closeDrawer()}
-async function transferTransaction(id){const dept=document.getElementById('trDept').value.trim(),person=document.getElementById('trPerson').value.trim(),note=document.getElementById('trNote').value.trim();if(!dept&&!person){alert('أدخل القسم أو الموظف');return}const x=await getOne(STORES.tx,id);const old=[x.currentDepartment,x.currentAssignee].filter(Boolean).join(' / ')||'غير محدد';x.currentDepartment=dept;x.currentAssignee=person;x.owner=person||dept;x.status='محولة';x.updatedAt=nowISO();await putOne(STORES.tx,x);const dest=[dept,person].filter(Boolean).join(' / ');await logAction(id,'transfer',`تم تحويل المعاملة من ${old} إلى ${dest}${note?' — '+note:''}`,{from:old,to:dest});showToast('✅ تم تسجيل التحويل محليًا');openDetail(id);renderHome()}
-async function deleteTransaction(id){if(!confirm('حذف المعاملة وجميع مرفقاتها وسجل إجراءاتها؟'))return;const atts=await byTx(STORES.att,id),acts=await byTx(STORES.act,id);for(const a of atts)await delOne(STORES.att,a.id);for(const a of acts)await delOne(STORES.act,a.id);await delOne(STORES.tx,id);closeDrawer();renderHome();showToast('تم حذف المعاملة')}
+function stopAutoScanner(){
+  if(detectorTimer){clearInterval(detectorTimer);detectorTimer=null;}
+  if(scannerStream){
+    scannerStream.getTracks().forEach(t=>t.stop());
+    scannerStream=null;
+  }
+  scanVideo.srcObject=null;
+  scanner.classList.remove('active');
+  stableFrames=0;
+  lastQuad=null;
+  capturing=false;
+}
 
-function formatBytes(n){if(!n)return'0 KB';if(n<1024)return n+' B';if(n<1024*1024)return(n/1024).toFixed(1)+' KB';return(n/1024/1024).toFixed(1)+' MB'}
-async function updateStorage(){try{if(!navigator.storage?.estimate){storageText.textContent='متصفحك لا يعرض تقدير مساحة التخزين.';return}const e=await navigator.storage.estimate();const used=e.usage||0,quota=e.quota||0;storageText.textContent=`المستخدم: ${formatBytes(used)} من ${formatBytes(quota)}`;storageFill.style.width=quota?Math.min(100,(used/quota)*100)+'%':'0%'}catch{storageText.textContent='تعذر حساب مساحة التخزين.'}}
-async function requestPersistence(){if(!navigator.storage?.persist){showToast('حماية التخزين غير مدعومة في هذا الإصدار من Safari');return}const ok=await navigator.storage.persist();showToast(ok?'✅ تم طلب التخزين الدائم':'لم يمنح النظام تخزينًا دائمًا؛ استخدم النسخ الاحتياطي')}
+function quadDistance(a,b){
+  if(!a||!b||a.length!==4||b.length!==4) return 9999;
+  let sum=0;
+  for(let i=0;i<4;i++){
+    sum+=Math.hypot(a[i].x-b[i].x,a[i].y-b[i].y);
+  }
+  return sum/4;
+}
 
-function blobToDataURL(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob)})}
-function dataURLToBlob(dataURL){const [h,b64]=dataURL.split(',');const type=(h.match(/data:(.*?);base64/)||[])[1]||'application/octet-stream';const bin=atob(b64);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);return new Blob([u8],{type})}
-async function exportBackup(){try{showToast('جارٍ تجهيز النسخة الاحتياطية…');const tx=await getAll(STORES.tx),actions=await getAll(STORES.act),attachments=await getAll(STORES.att);const packed=[];for(const a of attachments)packed.push({...a,blobData:await blobToDataURL(a.blob),blob:undefined});const data={app:'Moamalati',version:15,exportedAt:nowISO(),transactions:tx,actions,attachments:packed};const blob=new Blob([JSON.stringify(data)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');const d=new Date().toISOString().slice(0,10);a.href=url;a.download=`معاملاتي-نسخة-احتياطية-${d}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);showToast('✅ تم إنشاء النسخة الاحتياطية')}catch(e){console.error(e);alert('تعذر إنشاء النسخة الاحتياطية') }}
-async function importBackup(ev){const file=ev.target.files?.[0];ev.target.value='';if(!file)return;if(!confirm('سيتم دمج النسخة الاحتياطية مع البيانات الحالية. متابعة؟'))return;try{const data=JSON.parse(await file.text());if(data.app!=='Moamalati'||!Array.isArray(data.transactions))throw new Error('invalid');for(const x of data.transactions)await putOne(STORES.tx,x);for(const x of (data.actions||[]))await putOne(STORES.act,x);for(const x of (data.attachments||[])){const rec={...x,blob:dataURLToBlob(x.blobData)};delete rec.blobData;await putOne(STORES.att,rec)}showToast('✅ تمت استعادة النسخة');renderHome();updateStorage()}catch(e){console.error(e);alert('الملف غير صالح أو تعذرت الاستعادة')}}
+function orderQuad(pts){
+  const sums=pts.map(p=>p.x+p.y);
+  const diffs=pts.map(p=>p.x-p.y);
+  return [
+    pts[sums.indexOf(Math.min(...sums))], // top-left
+    pts[diffs.indexOf(Math.max(...diffs))], // top-right
+    pts[sums.indexOf(Math.max(...sums))], // bottom-right
+    pts[diffs.indexOf(Math.min(...diffs))] // bottom-left
+  ];
+}
 
-async function migrateLegacy(force=false){const meta=await getOne(STORES.meta,'legacyMigrated');if(meta&&!force){migrationText.textContent='تم فحص/ترحيل البيانات القديمة مسبقًا.';return}const keys=['moamalati_ocr_v3','moamalati_v2','moamalati_pwa_v2','moamalati_pwa_v1','transactions_v1'];let total=0;for(const key of keys){let arr=[];try{arr=JSON.parse(localStorage.getItem(key)||'[]')}catch{}if(!Array.isArray(arr))continue;for(const old of arr){const id=String(old.id||uid());if(await getOne(STORES.tx,id))continue;const x={id,number:old.n||old.number||`OLD-${Date.now()}`,type:old.t||old.type||'وارد',entity:old.e||old.entity||'',subject:old.s||old.subject||'معاملة قديمة',owner:old.o||old.owner||'',dueDate:old.d||old.due||'',status:old.st||old.status||'جديدة',notes:old.no||old.notes||'',ocrText:old.ocr||old.ocrText||'',createdAt:old.createdAt||nowISO(),updatedAt:nowISO(),currentDepartment:'',currentAssignee:''};await putOne(STORES.tx,x);await logAction(id,'migration','تم ترحيل المعاملة من النسخة القديمة');total++}}
-await putOne(STORES.meta,{key:'legacyMigrated',value:true,at:nowISO()});migrationText.textContent=total?`تم ترحيل ${total} معاملة قديمة إلى التخزين المحلي الجديد.`:'لم يتم العثور على معاملات قديمة تحتاج للترحيل.';if(total){showToast(`✅ تم ترحيل ${total} معاملة`);renderHome()}}
+function detectDocumentFrame(){
+  if(!scanVideo.videoWidth || capturing || !window.cv || !cv.Mat) return;
 
-async function init(){try{db=await openDB();await migrateLegacy(false);await renderHome();if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});if(navigator.storage?.persisted){const p=await navigator.storage.persisted();if(!p){} }}catch(e){console.error(e);alert('تعذر فتح قاعدة البيانات المحلية. أعد تحميل التطبيق.')}}
-init();
+  const maxW=900;
+  const scale=Math.min(1,maxW/scanVideo.videoWidth);
+  scanCanvas.width=Math.round(scanVideo.videoWidth*scale);
+  scanCanvas.height=Math.round(scanVideo.videoHeight*scale);
+  const ctx=scanCanvas.getContext('2d');
+  ctx.drawImage(scanVideo,0,0,scanCanvas.width,scanCanvas.height);
+
+  let src,gray,blur,edges,contours,hierarchy;
+  try{
+    src=cv.imread(scanCanvas);
+    gray=new cv.Mat();
+    blur=new cv.Mat();
+    edges=new cv.Mat();
+    contours=new cv.MatVector();
+    hierarchy=new cv.Mat();
+
+    cv.cvtColor(src,gray,cv.COLOR_RGBA2GRAY);
+    cv.GaussianBlur(gray,blur,new cv.Size(5,5),0,0,cv.BORDER_DEFAULT);
+    cv.Canny(blur,edges,60,160);
+    cv.findContours(edges,contours,hierarchy,cv.RETR_LIST,cv.CHAIN_APPROX_SIMPLE);
+
+    let best=null,bestArea=0;
+    const minArea=scanCanvas.width*scanCanvas.height*0.18;
+
+    for(let i=0;i<contours.size();i++){
+      const cnt=contours.get(i);
+      const peri=cv.arcLength(cnt,true);
+      const approx=new cv.Mat();
+      cv.approxPolyDP(cnt,approx,0.02*peri,true);
+      const area=Math.abs(cv.contourArea(approx));
+      if(approx.rows===4 && area>minArea && area>bestArea && cv.isContourConvex(approx)){
+        const pts=[];
+        for(let j=0;j<4;j++){
+          pts.push({x:approx.intPtr(j,0)[0],y:approx.intPtr(j,0)[1]});
+        }
+        best=orderQuad(pts);
+        bestArea=area;
+      }
+      approx.delete();
+      cnt.delete();
+    }
+
+    if(best){
+      const movement=quadDistance(best,lastQuad);
+      lastQuad=best;
+
+      if(movement<22){
+        stableFrames++;
+      }else{
+        stableFrames=1;
+      }
+
+      if(stableFrames>=2) autoScanStatus.textContent='تم العثور على المستند… ثبّت الجوال';
+      if(stableFrames>=5){
+        autoScanStatus.textContent='يتم المسح تلقائيًا…';
+        autoCapture(best,scale);
+      }
+    }else{
+      stableFrames=0;
+      lastQuad=null;
+      autoScanStatus.textContent='وجّه المستند كاملًا داخل الإطار';
+    }
+  }catch(err){
+    console.error('detect',err);
+  }finally{
+    [src,gray,blur,edges,hierarchy].forEach(m=>{try{m&&m.delete()}catch(e){}});
+    try{contours&&contours.delete()}catch(e){}
+  }
+}
+
+let manualBusy=false;
+
+async function manualCapture(){
+  if(manualBusy) return;
+
+  if(!scanVideo.videoWidth || !scanVideo.videoHeight){
+    autoScanStatus.textContent='انتظر لحظة حتى تجهز الكاميرا ثم اضغط مرة أخرى';
+    return;
+  }
+
+  manualBusy=true;
+  capturing=true;
+  autoScanStatus.textContent='تم الالتقاط… جارٍ إنشاء المسح الضوئي';
+
+  // أوقف الكشف التلقائي فورًا حتى لا يمنع زر "التقاط الآن"
+  if(detectorTimer){
+    clearInterval(detectorTimer);
+    detectorTimer=null;
+  }
+
+  try{
+    const c=document.createElement('canvas');
+    c.width=scanVideo.videoWidth;
+    c.height=scanVideo.videoHeight;
+    const ctx=c.getContext('2d');
+    ctx.drawImage(scanVideo,0,0,c.width,c.height);
+
+    // أوقف الكاميرا وأغلق شاشة التصوير فور الضغط
+    if(scannerStream){
+      scannerStream.getTracks().forEach(t=>t.stop());
+      scannerStream=null;
+    }
+    scanVideo.srcObject=null;
+    scanner.classList.remove('active');
+
+    scanProgress.style.display='block';
+    scanTitle.textContent='جارٍ إنشاء المسح الضوئي…';
+    setProgress(.08,'تم التقاط المستند، جارٍ القص والتحسين…');
+
+    // محاولة المسح الحقيقي: اكتشاف الورقة + تصحيح المنظور + أبيض وأسود
+    let scannedCanvas=c;
+    let foundPaper=false;
+
+    try{
+      const ready=await ensureCV();
+      if(ready){
+        const maxSide=2200;
+        const scale=Math.min(1,maxSide/Math.max(c.width,c.height));
+        const work=document.createElement('canvas');
+        work.width=Math.round(c.width*scale);
+        work.height=Math.round(c.height*scale);
+        work.getContext('2d').drawImage(c,0,0,work.width,work.height);
+
+        let srcMat=cv.imread(work);
+        try{
+          const quad=detectLargestDocument(srcMat);
+          const result=warpAndEnhance(srcMat,quad);
+          const out=document.createElement('canvas');
+          out.width=result.mat.cols;
+          out.height=result.mat.rows;
+          cv.imshow(out,result.mat);
+
+          try{result.mat.delete()}catch(e){}
+          result.cleanup.forEach(m=>{try{m.delete()}catch(e){}});
+
+          scannedCanvas=out;
+          foundPaper=!!quad;
+        }finally{
+          try{srcMat.delete()}catch(e){}
+        }
+      }
+    }catch(scanErr){
+      console.warn('Scan enhancement fallback:',scanErr);
+      // في حال تعذر OpenCV نكمل بالصورة نفسها بدل أن يتوقف الزر
+      scannedCanvas=c;
+      foundPaper=false;
+    }
+
+    scanPreview.src=scannedCanvas.toDataURL('image/jpeg',0.82);
+    scanPreview.style.display='block';
+    setProgress(.32,foundPaper
+      ? 'تم اكتشاف الورقة وقصّها وتصحيحها.'
+      : 'تم التقاط الصورة. جارٍ قراءة النص…'
+    );
+
+    if(typeof Tesseract==='undefined'){
+      throw new Error('تعذر تحميل OCR');
+    }
+
+    const result=await Tesseract.recognize(scannedCanvas,'ara+eng',{
+      logger:m=>{
+        if(m.status==='recognizing text'){
+          setProgress(.35+(m.progress||0)*.55,'جارٍ قراءة النص من المستند…');
+        }
+      }
+    });
+
+    const text=(result?.data?.text||'').trim();
+    const ex=extractData(text);
+
+    setProgress(.94,'تمت القراءة، جارٍ الحفظ…');
+
+    const record={
+      id:String(Date.now()),
+      n:ex.num,
+      t:'وارد',
+      e:ex.entity,
+      s:ex.subject,
+      o:'OCR تلقائي',
+      d:'',
+      st:'جديدة',
+      no:(ex.date ? 'تاريخ مقروء من المستند: '+ex.date : '') +
+         (foundPaper ? ' • مسح ضوئي يدوي' : ' • التقاط يدوي'),
+      ocr:text,
+      scanned:true,
+      trueScan:foundPaper
+    };
+
+    const a=gd();
+    a.push(record);
+    sd(a);
+
+    setProgress(1,'تم حفظ المستند بنجاح.');
+    render();
+    showToast('✅ تم التقاط المستند وحفظه');
+
+    setTimeout(()=>{
+      scanProgress.style.display='none';
+      scanBar.style.width='0';
+      scanPreview.style.display='none';
+    },2200);
+
+  }catch(err){
+    console.error(err);
+    scanTitle.textContent='تعذر إكمال المسح';
+    scanMsg.textContent='تم التقاط الصورة ولكن تعذرت القراءة. تأكد من الإنترنت وحاول مرة أخرى.';
+    scanBar.style.width='0';
+    showToast('تعذر إكمال المسح');
+  }finally{
+    manualBusy=false;
+    capturing=false;
+  }
+}
+
+async function autoCapture(quad,scale){
+  if(capturing) return;
+  capturing=true;
+  if(detectorTimer){clearInterval(detectorTimer);detectorTimer=null;}
+
+  try{
+    // capture full-resolution frame
+    const full=document.createElement('canvas');
+    full.width=scanVideo.videoWidth;
+    full.height=scanVideo.videoHeight;
+    full.getContext('2d').drawImage(scanVideo,0,0);
+
+    const q=quad.map(p=>({x:p.x/scale,y:p.y/scale}));
+    const ordered=orderQuad(q);
+
+    const w1=Math.hypot(ordered[1].x-ordered[0].x,ordered[1].y-ordered[0].y);
+    const w2=Math.hypot(ordered[2].x-ordered[3].x,ordered[2].y-ordered[3].y);
+    const h1=Math.hypot(ordered[3].x-ordered[0].x,ordered[3].y-ordered[0].y);
+    const h2=Math.hypot(ordered[2].x-ordered[1].x,ordered[2].y-ordered[1].y);
+    const outW=Math.max(600,Math.round(Math.max(w1,w2)));
+    const outH=Math.max(800,Math.round(Math.max(h1,h2)));
+
+    workCanvas.width=full.width;
+    workCanvas.height=full.height;
+    workCanvas.getContext('2d').drawImage(full,0,0);
+
+    let src=cv.imread(workCanvas);
+    let dst=new cv.Mat();
+    let srcTri=cv.matFromArray(4,1,cv.CV_32FC2,[
+      ordered[0].x,ordered[0].y,
+      ordered[1].x,ordered[1].y,
+      ordered[2].x,ordered[2].y,
+      ordered[3].x,ordered[3].y
+    ]);
+    let dstTri=cv.matFromArray(4,1,cv.CV_32FC2,[
+      0,0,
+      outW-1,0,
+      outW-1,outH-1,
+      0,outH-1
+    ]);
+    let M=cv.getPerspectiveTransform(srcTri,dstTri);
+    cv.warpPerspective(src,dst,M,new cv.Size(outW,outH),cv.INTER_LINEAR,cv.BORDER_CONSTANT,new cv.Scalar());
+
+    const cropped=document.createElement('canvas');
+    cropped.width=outW;
+    cropped.height=outH;
+    cv.imshow(cropped,dst);
+
+    [src,dst,srcTri,dstTri,M].forEach(m=>m.delete());
+    stopAutoScanner();
+    await processScannedCanvas(cropped);
+  }catch(err){
+    console.error('autoCapture',err);
+    stopAutoScanner();
+    showToast('تعذر القص التلقائي، استخدم الالتقاط العادي');
+  }
+}
+
+async function processScannedCanvas(canvas){
+  scanTitle.textContent='جارٍ قراءة المستند…';
+  scanProgress.style.display='block';
+  setProgress(.04,'تم المسح، جارٍ قراءة النص…');
+
+  try{
+    if(typeof Tesseract==='undefined') throw new Error('تعذر تحميل محرك OCR');
+
+    const result=await Tesseract.recognize(canvas,'ara+eng',{
+      logger:m=>{
+        if(m.status==='recognizing text'){
+          setProgress(m.progress||0,'جارٍ قراءة النص من المستند…');
+        }else{
+          setProgress(Math.min(.25+(m.progress||0)*.5,.8),'تحميل وتجهيز محرك OCR…');
+        }
+      }
+    });
+
+    const text=(result?.data?.text||'').trim();
+    setProgress(.92,'تمت القراءة، جارٍ استخراج البيانات والحفظ…');
+
+    const ex=extractData(text);
+    const record={
+      id:String(Date.now()),
+      n:ex.num,
+      t:'وارد',
+      e:ex.entity,
+      s:ex.subject,
+      o:'OCR تلقائي',
+      d:'',
+      st:'جديدة',
+      no:ex.date ? 'تاريخ مقروء من المستند: '+ex.date : '',
+      ocr:text,
+      scanned:true,
+      autoScanned:true
+    };
+
+    const a=gd();
+    a.push(record);
+    sd(a);
+
+    setProgress(1,'تم المسح والحفظ تلقائيًا.');
+    render();
+    showToast('✅ تم مسح المستند وحفظه تلقائيًا');
+
+    setTimeout(()=>{
+      scanProgress.style.display='none';
+      scanBar.style.width='0';
+    },1800);
+  }catch(err){
+    console.error(err);
+    scanTitle.textContent='تعذرت قراءة المستند';
+    scanMsg.textContent='حاول بإضاءة أفضل أو استخدم تصوير مستند وتحويله لمسح.';
+    scanBar.style.width='0';
+    showToast('تعذرت قراءة المستند');
+  }finally{
+    capturing=false;
+  }
+}
+
+
+
+async function fileToImage(file){
+  return new Promise((resolve,reject)=>{
+    const url=URL.createObjectURL(file);
+    const img=new Image();
+    img.onload=()=>{URL.revokeObjectURL(url);resolve(img)};
+    img.onerror=e=>{URL.revokeObjectURL(url);reject(e)};
+    img.src=url;
+  });
+}
+
+async function ensureCV(){
+  const started=Date.now();
+  while(Date.now()-started<15000){
+    if(window.cv && cv.Mat) return true;
+    await new Promise(r=>setTimeout(r,200));
+  }
+  return false;
+}
+
+function orderPoints(pts){
+  const sums=pts.map(p=>p.x+p.y);
+  const diffs=pts.map(p=>p.x-p.y);
+  return [
+    pts[sums.indexOf(Math.min(...sums))],
+    pts[diffs.indexOf(Math.max(...diffs))],
+    pts[sums.indexOf(Math.max(...sums))],
+    pts[diffs.indexOf(Math.min(...diffs))]
+  ];
+}
+
+function detectLargestDocument(src){
+  let gray=new cv.Mat(), blur=new cv.Mat(), edges=new cv.Mat();
+  let contours=new cv.MatVector(), hierarchy=new cv.Mat();
+  try{
+    cv.cvtColor(src,gray,cv.COLOR_RGBA2GRAY);
+    cv.GaussianBlur(gray,blur,new cv.Size(5,5),0,0,cv.BORDER_DEFAULT);
+    cv.Canny(blur,edges,50,150);
+    cv.dilate(edges,edges,new cv.Mat(),new cv.Point(-1,-1),1);
+
+    cv.findContours(edges,contours,hierarchy,cv.RETR_LIST,cv.CHAIN_APPROX_SIMPLE);
+
+    let best=null, bestArea=0;
+    const minArea=src.cols*src.rows*0.12;
+
+    for(let i=0;i<contours.size();i++){
+      const cnt=contours.get(i);
+      const peri=cv.arcLength(cnt,true);
+      const approx=new cv.Mat();
+      cv.approxPolyDP(cnt,approx,0.02*peri,true);
+      const area=Math.abs(cv.contourArea(approx));
+
+      if(approx.rows===4 && area>minArea && area>bestArea && cv.isContourConvex(approx)){
+        const pts=[];
+        for(let j=0;j<4;j++){
+          const p=approx.intPtr(j,0);
+          pts.push({x:p[0],y:p[1]});
+        }
+        best=orderPoints(pts);
+        bestArea=area;
+      }
+      approx.delete();
+      cnt.delete();
+    }
+    return best;
+  }finally{
+    [gray,blur,edges,hierarchy].forEach(m=>{try{m.delete()}catch(e){}});
+    try{contours.delete()}catch(e){}
+  }
+}
+
+function warpAndEnhance(src,quad){
+  let warped=null;
+  let cleanup=[];
+
+  try{
+    if(quad){
+      const [tl,tr,br,bl]=quad;
+      const w1=Math.hypot(tr.x-tl.x,tr.y-tl.y);
+      const w2=Math.hypot(br.x-bl.x,br.y-bl.y);
+      const h1=Math.hypot(bl.x-tl.x,bl.y-tl.y);
+      const h2=Math.hypot(br.x-tr.x,br.y-tr.y);
+      const outW=Math.max(700,Math.round(Math.max(w1,w2)));
+      const outH=Math.max(900,Math.round(Math.max(h1,h2)));
+
+      const srcTri=cv.matFromArray(4,1,cv.CV_32FC2,[
+        tl.x,tl.y,tr.x,tr.y,br.x,br.y,bl.x,bl.y
+      ]);
+      const dstTri=cv.matFromArray(4,1,cv.CV_32FC2,[
+        0,0,outW-1,0,outW-1,outH-1,0,outH-1
+      ]);
+      const M=cv.getPerspectiveTransform(srcTri,dstTri);
+      warped=new cv.Mat();
+      cv.warpPerspective(src,warped,M,new cv.Size(outW,outH),cv.INTER_LINEAR,cv.BORDER_REPLICATE);
+      cleanup.push(srcTri,dstTri,M);
+    }else{
+      warped=src.clone();
+    }
+
+    // Scanner-style enhancement: grayscale, denoise, adaptive threshold
+    let gray=new cv.Mat(), denoise=new cv.Mat(), bw=new cv.Mat(), rgba=new cv.Mat();
+    cv.cvtColor(warped,gray,cv.COLOR_RGBA2GRAY);
+    cv.GaussianBlur(gray,denoise,new cv.Size(3,3),0,0,cv.BORDER_DEFAULT);
+    cv.adaptiveThreshold(
+      denoise,bw,255,
+      cv.ADAPTIVE_THRESH_GAUSSIAN_C,
+      cv.THRESH_BINARY,31,15
+    );
+    cv.cvtColor(bw,rgba,cv.COLOR_GRAY2RGBA);
+    cleanup.push(gray,denoise,bw);
+
+    return {mat:rgba, cleanup:[...cleanup,warped]};
+  }catch(err){
+    cleanup.forEach(m=>{try{m.delete()}catch(e){}});
+    try{warped&&warped.delete()}catch(e){}
+    throw err;
+  }
+}
+
+async function processPhotoIntoScan(file){
+  const cvReady=await ensureCV();
+  if(!cvReady) throw new Error('OpenCV لم يحمّل');
+
+  const img=await fileToImage(file);
+
+  // Downscale huge images for reliability on iPhone memory
+  const maxSide=2200;
+  const scale=Math.min(1,maxSide/Math.max(img.naturalWidth,img.naturalHeight));
+  const c=document.createElement('canvas');
+  c.width=Math.round(img.naturalWidth*scale);
+  c.height=Math.round(img.naturalHeight*scale);
+  c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+
+  let src=cv.imread(c);
+  try{
+    const quad=detectLargestDocument(src);
+    const {mat,cleanup}=warpAndEnhance(src,quad);
+    const out=document.createElement('canvas');
+    out.width=mat.cols;
+    out.height=mat.rows;
+    cv.imshow(out,mat);
+
+    try{mat.delete()}catch(e){}
+    cleanup.forEach(m=>{try{m.delete()}catch(e){}});
+
+    return {canvas:out,foundPaper:!!quad};
+  }finally{
+    try{src.delete()}catch(e){}
+  }
+}
+
+async function scanDocumentAsTrueScan(ev){
+  const file=ev.target.files && ev.target.files[0];
+  ev.target.value='';
+  if(!file) return;
+
+  scanProgress.style.display='block';
+  scanTitle.textContent='جارٍ تحويل الصورة إلى مسح ضوئي…';
+  setProgress(.05,'اكتشاف حدود الورقة وتصحيح المنظور…');
+  scanPreview.style.display='none';
+
+  try{
+    const scanned=await processPhotoIntoScan(file);
+
+    setProgress(.30, scanned.foundPaper
+      ? 'تم اكتشاف الورقة وقصّها تلقائيًا وتحسينها.'
+      : 'لم تُكتشف الحدود بدقة، تم تحسين الصورة كاملة كمسح ضوئي.'
+    );
+
+    scanPreview.src=scanned.canvas.toDataURL('image/jpeg',0.82);
+    scanPreview.style.display='block';
+
+    if(typeof Tesseract==='undefined') throw new Error('تعذر تحميل OCR');
+
+    const result=await Tesseract.recognize(scanned.canvas,'ara+eng',{
+      logger:m=>{
+        if(m.status==='recognizing text'){
+          setProgress(.35+(m.progress||0)*.55,'جارٍ قراءة النص من النسخة الممسوحة…');
+        }
+      }
+    });
+
+    const text=(result?.data?.text||'').trim();
+    setProgress(.93,'تمت القراءة، جارٍ الحفظ تلقائيًا…');
+
+    const ex=extractData(text);
+    const record={
+      id:String(Date.now()),
+      n:ex.num,
+      t:'وارد',
+      e:ex.entity,
+      s:ex.subject,
+      o:'OCR تلقائي',
+      d:'',
+      st:'جديدة',
+      no:(ex.date ? 'تاريخ مقروء من المستند: '+ex.date : '') + (scanned.foundPaper ? ' • مسح ضوئي تلقائي' : ' • تحسين ضوئي تلقائي'),
+      ocr:text,
+      scanned:true,
+      trueScan:true
+    };
+
+    const a=gd();
+    a.push(record);
+    sd(a);
+
+    setProgress(1,'تم المسح الضوئي والحفظ بنجاح.');
+    render();
+    showToast('✅ تم تحويل الصورة إلى مسح ضوئي وحفظها');
+    setTimeout(()=>{
+      scanProgress.style.display='none';
+      scanBar.style.width='0';
+      scanPreview.style.display='none';
+    },2200);
+
+  }catch(err){
+    console.error(err);
+    scanTitle.textContent='تعذر إنشاء المسح الضوئي';
+    scanMsg.textContent='حاول بصورة أوضح، وخلفية مغايرة للورقة، وإضاءة جيدة.';
+    scanBar.style.width='0';
+    showToast('تعذر المسح الضوئي');
+  }
+}
+
+
+async function scanDocument(ev){
+  const file=ev.target.files && ev.target.files[0];
+  ev.target.value='';
+  if(!file) return;
+
+  scanTitle.textContent='جارٍ قراءة المستند…';
+  setProgress(.03,'تهيئة محرك القراءة العربية والإنجليزية…');
+
+  try{
+    if(typeof Tesseract==='undefined') throw new Error('تعذر تحميل محرك OCR');
+    const result = await Tesseract.recognize(file,'ara+eng',{
+      logger:m=>{
+        if(m.status==='recognizing text'){
+          setProgress(m.progress||0,'جارٍ قراءة النص من المستند…');
+        }else{
+          setProgress(Math.min(.25+(m.progress||0)*.5,.8),'تحميل وتجهيز محرك OCR…');
+        }
+      }
+    });
+
+    const text=(result && result.data && result.data.text ? result.data.text : '').trim();
+    setProgress(.92,'تمت القراءة، جارٍ استخراج البيانات والحفظ…');
+
+    const ex=extractData(text);
+    const record={
+      id:String(Date.now()),
+      n:ex.num,
+      t:'وارد',
+      e:ex.entity,
+      s:ex.subject,
+      o:'OCR تلقائي',
+      d:'',
+      st:'جديدة',
+      no: ex.date ? 'تاريخ مقروء من المستند: '+ex.date : '',
+      ocr:text,
+      scanned:true
+    };
+
+    const a=gd(); a.push(record); sd(a);
+    setProgress(1,'تم حفظ المستند تلقائيًا.');
+    render();
+    showToast('✅ تم قراءة المستند وحفظه تلقائيًا بدون اعتماد');
+    setTimeout(()=>{scanProgress.style.display='none';scanBar.style.width='0';},1800);
+
+  }catch(err){
+    console.error(err);
+    scanTitle.textContent='تعذرت قراءة المستند';
+    scanMsg.textContent='تأكد من اتصال الإنترنت في أول استخدام، وأن الصورة واضحة، ثم حاول مرة أخرى.';
+    scanBar.style.width='0';
+    showToast('تعذرت قراءة المستند');
+  }
+}
+
+function deleteTx(id){
+  if(!confirm('هل تريد حذف هذه المعاملة؟')) return;
+  const a=gd().filter(x=>String(x.id)!==String(id));
+  sd(a);
+  render();
+  if(document.getElementById('search')?.classList.contains('active')) renderSearch();
+  showToast('تم حذف المعاملة');
+}
+
+function wipe(){
+  if(confirm('حذف جميع المعاملات؟')){localStorage.removeItem(K);render()}
+}
+
+function demo(){
+  let a=gd();
+  a.push({
+    id:String(Date.now()),
+    n:'2026-001',t:'وارد',e:'قسم الجراحة',
+    s:'طلب إفادة عن معاملة',o:'OCR تلقائي',d:'',st:'جديدة',
+    no:'',ocr:'هذا نص تجريبي مقروء من مستند. يمكن البحث عن كلمة الجراحة أو الإفادة أو أي كلمة هنا.'
+  });
+  sd(a);render();showToast('تمت إضافة معاملة تجريبية');
+}
+
+if('serviceWorker'in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+render();
 </script>
-</body></html>
+</body>
+</html>
